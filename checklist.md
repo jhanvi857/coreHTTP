@@ -11,15 +11,15 @@ Responsibilities:
 - Listen forever
 - Accept client connections
 - Delegate each connection
-- Design rules:
 
-### This class does NOT know HTTP
-### It only knows TCP connections
-### It must not block other clients
+###  Design rules:
+- This class does NOT know HTTP
+- It only knows TCP connections
+- It must not block other clients
 
 ## Outcome:
 
-- You can connect using:
+- connect using:
 - telnet localhost 8080
 - Connection succeeds (even if no response yet)
 
@@ -32,7 +32,7 @@ Responsibilities:
 
 Purpose: Handle one client connection end-to-end
 
-Responsibilities:
+## Responsibilities:
 - Read raw bytes from socket
 - Detect client disconnect
 - Pass raw data to HTTP parser
