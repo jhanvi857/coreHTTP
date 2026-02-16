@@ -11,8 +11,11 @@ public class HttpServer {
         System.out.println("Starting TCP server on port : "+port);
         try(ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
+                System.out.println("Waiting for the client...");
                 Socket clienSocket = serverSocket.accept();
-                new Thread(()->handleClient(clienSocket)).start();
+                System.out.println("Client accepted.");
+                ConnectionHandler handler = new ConnectionHandler(clienSocket);
+                new Thread(handler).start();
             }
         } catch(IOException e) {
             System.out.println("Server failed ! "+e.getMessage());
