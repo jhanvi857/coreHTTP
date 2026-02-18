@@ -61,6 +61,8 @@ classDiagram
     RouteHandler ..> HttpResponse : Produces
 ```
 
+---
+
 ### 1. Server Layer
 *   **HttpServer**: Manages the life cycle of the ServerSocket. It listens for incoming TCP connections on a specified port and delegates processing to the thread pool.
 *   **ConnectionHandler**: Handles the individual client interaction. It reads raw bytes, invokes the parser, resolves the route, and writes the response back to the socket.
@@ -107,6 +109,8 @@ sequenceDiagram
     Handler->>Client: Close Socket
     deactivate Handler
 ```
+
+---
 
 1.  **Connection**: A client (browser or curl) initiates a TCP connection to the server.
 2.  **Accept**: The `HttpServer` accepts the socket and submits the task to the `ExecutorService` (Thread Pool).
