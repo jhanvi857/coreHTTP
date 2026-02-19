@@ -1,0 +1,13 @@
+{
+    "server": "Java CoreHTTP Server",
+    "version": "1.0.0",
+    "status": "online",
+    "features": [
+        "Multi-threaded request handling",
+        "Static file serving",
+        "Binary content support",
+        "JSON API responses"
+    ],
+    "author": "Jhanvi patel",
+    "timestamp": "2024-02-19"
+}
