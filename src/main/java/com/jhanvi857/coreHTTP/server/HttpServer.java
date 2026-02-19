@@ -35,22 +35,6 @@ public class HttpServer {
         }
     }
 
-    public void handleClient(Socket clientSocket) {
-        try {
-            System.out.println("Client connected : " + clientSocket.getRemoteSocketAddress());
-            System.out.println("Handled by thread : " + Thread.currentThread().getName());
-            Thread.sleep(60_000);
-        } catch (Exception e) {
-            System.out.println("Error on connecting client in handleClient. " + e.getMessage());
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (Exception e) {
-
-            }
-        }
-    }
-
     public static void main(String[] args) {
         com.jhanvi857.coreHTTP.routing.Router router = new com.jhanvi857.coreHTTP.routing.Router();
 
