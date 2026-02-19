@@ -34,9 +34,8 @@ public class StaticFileHandler implements RouteHandler {
 
         if (file.exists() && !file.isDirectory()) {
             byte[] fileBytes = Files.readAllBytes(file.toPath());
-            String content = new String(fileBytes); // Simpler for now, assuming text files
 
-            HttpResponse response = new HttpResponse(HttpStatus.OK, content);
+            HttpResponse response = new HttpResponse(HttpStatus.OK, fileBytes);
 
             // MIME type detection
             if (path.endsWith(".html")) {
@@ -45,8 +44,14 @@ public class StaticFileHandler implements RouteHandler {
                 response.addHeader("Content-Type", "text/css");
             } else if (path.endsWith(".js")) {
                 response.addHeader("Content-Type", "application/javascript");
-            } else {
-                response.addHeader("Content-Type", "text/plain");
+            } else if (path.endsWith(".png")) {
+                response.addHeader("Content-Type", "image/png");
+            } else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+                response.addHeader("Content-Type", "image/jpeg");
+            } else if (path.endsWith(".gif")) {
+                response.addHeader("Content-Type", "image/gif");
+            } else if (path.endsWith(".json")) {
+                response.addHeader("Content-Type", "application/json");
             }
 
             return response;

@@ -1,5 +1,6 @@
 package com.jhanvi857.coreHTTP.protocol;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class HttpRequest {
@@ -7,14 +8,16 @@ public class HttpRequest {
     private final String method;
     private final String version;
     private final Map<String, String> headers;
-    private final String body;
-    public HttpRequest(String path,String method,String version,Map<String,String>headers,String body) {
+    private final byte[] body;
+
+    public HttpRequest(String path, String method, String version, Map<String, String> headers, byte[] body) {
         this.path = path;
         this.method = method;
-        this.headers = headers;
-        this.body = body;
         this.version = version;
+        this.headers = headers;
+        this.body = body != null ? body : new byte[0];
     }
+
     public String getMethod() {
         return method;
     }
@@ -31,7 +34,11 @@ public class HttpRequest {
         return headers;
     }
 
-    public String getBody() {
+    public byte[] getBody() {
         return body;
+    }
+
+    public String getBodyAsString() {
+        return new String(body, StandardCharsets.UTF_8);
     }
 }

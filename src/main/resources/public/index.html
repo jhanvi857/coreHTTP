@@ -1,29 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Welcome to CoreHTTP</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            padding: 50px;
-        }
-
-        h1 {
-            color: #2c3e50;
-        }
-
-        p {
-            color: #7f8c8d;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreHTTP Server Demo</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <h1>It's Working !!</h1>
-    <p>Serving static files from my own Java HTTP Server.</p>
-</body>
+    <h1>Welcome to CoreHTTP Server</h1>
+    <p>This is a custom-built Java HTTP server capable of serving static files (HTML, CSS, JS) and JSON data.</p>
+    
+    <div class="demo-section">
+        <h2>Interact with the Server</h2>
+        <p>Click the button below to fetch <code>data.json</code> asynchronously using JavaScript.</p>
+        <button onclick="fetchDemoData()">Fetch JSON Data</button>
+        <div id="server-response">Response will appear here...</div>
+    </div>
 
+    <script src="script.js"></script>
+</body>
 </html>

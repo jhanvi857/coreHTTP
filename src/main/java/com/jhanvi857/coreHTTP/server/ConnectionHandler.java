@@ -21,21 +21,13 @@ public class ConnectionHandler implements Runnable {
     public void run() {
         System.out.println("Handling client: " + socket.getRemoteSocketAddress());
 
-        try (InputStream in = socket.getInputStream()) {
-
-            byte[] buffer = new byte[8192];
-            int bytesRead = in.read(buffer);
-
-            if (bytesRead == -1) {
-                return;
-            }
-
-            byte[] requestBytes = new byte[bytesRead];
-            System.arraycopy(buffer, 0, requestBytes, 0, bytesRead);
+        InputStream in = null;
+        try {
+            in = socket.getInputStream();
 
             // phase 3 entry point
             HttpParser parser = new HttpParser();
-            HttpRequest request = parser.parse(requestBytes);
+            HttpRequest request = parser.parse(in);
 
             // debugging.
             System.out.println("METHOD  : " + request.getMethod());
@@ -55,8 +47,7 @@ public class ConnectionHandler implements Runnable {
                         "<h1>404 Not Found</h1>");
             }
 
-            socket.getOutputStream().write(response.toString().getBytes());
-            socket.getOutputStream().flush();
+            response.writeTo(socket.getOutputStream());
 
         } catch (HttpParseException e) {
             System.out.println("Bad HTTP request: " + e.getMessage());
@@ -72,7 +63,11 @@ public class ConnectionHandler implements Runnable {
 
         } finally {
             try {
-                socket.close();
+                if (in != null) {
+                    in.close();
+                } else {
+                    socket.close();
+                }
             } catch (Exception ignored) {
                 System.out.println("Error in handling client from connection handler" + ignored.getMessage());
             }
@@ -83,8 +78,7 @@ public class ConnectionHandler implements Runnable {
         try {
             com.jhanvi857.coreHTTP.protocol.HttpResponse response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
                     status, "<h1>" + status.getCode() + " " + message + "</h1>");
-            socket.getOutputStream().write(response.toString().getBytes());
-            socket.getOutputStream().flush();
+            response.writeTo(socket.getOutputStream());
         } catch (java.io.IOException e) {
             System.out.println("Failed to send error response: " + e.getMessage());
         }

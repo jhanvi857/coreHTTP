@@ -12,8 +12,32 @@ public class Router {
         routes.put(path, handler);
     }
 
-    // resolving route.
+    // resolving route using longest prefix matching
     public RouteHandler resolve(HttpRequest request) {
-        return routes.get(request.getPath());
+        String path = request.getPath();
+
+        // 1. Precise match
+        if (routes.containsKey(path)) {
+            return routes.get(path);
+        }
+
+        // 2. Longest Prefix Match
+        String bestMatch = null;
+        int bestLength = -1;
+
+        for (String routePattern : routes.keySet()) {
+            if (path.startsWith(routePattern)) {
+                if (routePattern.length() > bestLength) {
+                    bestLength = routePattern.length();
+                    bestMatch = routePattern;
+                }
+            }
+        }
+
+        if (bestMatch != null) {
+            return routes.get(bestMatch);
+        }
+
+        return null;
     }
 }
