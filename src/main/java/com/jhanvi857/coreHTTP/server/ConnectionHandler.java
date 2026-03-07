@@ -5,6 +5,7 @@ import com.jhanvi857.coreHTTP.protocol.HttpRequest;
 import com.jhanvi857.coreHTTP.exception.HttpParseException;
 
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.net.Socket;
 
 public class ConnectionHandler implements Runnable {
@@ -53,6 +54,13 @@ public class ConnectionHandler implements Runnable {
             System.out.println("Bad HTTP request: " + e.getMessage());
             sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.BAD_REQUEST, "Bad Request: " + e.getMessage());
 
+        } catch (SocketTimeoutException e) {
+            // Timeout is expected when a client opens a connection but sends data too slowly.
+            // We return 408 instead of 500 so clients know the request timed out.
+            System.out.println("Request timed out: " + e.getMessage());
+            sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.REQUEST_TIMEOUT,
+                    "Request Timeout");
+
         } catch (Exception e) {
             System.out.println("Connection error: " + e.getMessage());
             // sending 500 only when the socket is still open and not already closed
@@ -65,7 +73,8 @@ public class ConnectionHandler implements Runnable {
             try {
                 if (in != null) {
                     in.close();
-                } else {
+                }
+                if (!socket.isClosed()) {
                     socket.close();
                 }
             } catch (Exception ignored) {

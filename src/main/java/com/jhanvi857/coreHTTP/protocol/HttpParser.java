@@ -11,6 +11,10 @@ import com.jhanvi857.coreHTTP.exception.HttpParseException;
 
 public final class HttpParser {
 
+    private static final int MAX_HEADER_SIZE_BYTES = 8192;
+    private static final int MAX_CHUNK_LINE_BYTES = 1024;
+    private static final int MAX_CHUNKED_BODY_BYTES = 10 * 1024 * 1024;
+
     public HttpRequest parse(InputStream in) throws Exception {
         // Reading headers
         String headerBlock = readHeaderBlock(in);
@@ -54,19 +58,31 @@ public final class HttpParser {
 
         // Parsing Body
         byte[] body = new byte[0];
-        if (headers.containsKey("Content-Length")) {
+        String transferEncoding = getHeaderValueIgnoreCase(headers, "Transfer-Encoding");
+        String contentLengthValue = getHeaderValueIgnoreCase(headers, "Content-Length");
+
+        // We prioritize explicit framing rules to avoid ambiguous message bodies.
+        // Accepting both Content-Length and chunked at once can open request-smuggling issues.
+        if (transferEncoding != null) {
+            if (!"chunked".equalsIgnoreCase(transferEncoding)) {
+                throw new HttpParseException("Unsupported Transfer-Encoding: " + transferEncoding);
+            }
+            if (contentLengthValue != null) {
+                throw new HttpParseException("Both Transfer-Encoding and Content-Length are not allowed");
+            }
+            body = readChunkedBody(in);
+        } else if (contentLengthValue != null) {
             try {
-                int contentLength = Integer.parseInt(headers.get("Content-Length"));
+                int contentLength = Integer.parseInt(contentLengthValue);
+                if (contentLength < 0) {
+                    throw new HttpParseException("Negative Content-Length");
+                }
                 if (contentLength > 0) {
                     body = readBody(in, contentLength);
                 }
             } catch (NumberFormatException e) {
                 throw new HttpParseException("Invalid Content-Length");
             }
-        } else if (headers.containsKey("Transfer-Encoding")
-                && "chunked".equalsIgnoreCase(headers.get("Transfer-Encoding"))) {
-            // TODO: Implement chunked encoding support
-            throw new HttpParseException("Chunked encoding not supported yet");
         }
 
         return new HttpRequest(path, method, version, headers, body);
@@ -102,7 +118,7 @@ public final class HttpParser {
             }
 
             // Safety limit for headers
-            if (buffer.size() > 8192) {
+            if (buffer.size() > MAX_HEADER_SIZE_BYTES) {
                 throw new IOException("Request headers too large");
             }
         }
@@ -116,6 +132,102 @@ public final class HttpParser {
         while (totalRead < length && (read = in.read(body, totalRead, length - totalRead)) != -1) {
             totalRead += read;
         }
+        if (totalRead < length) {
+            throw new IOException("Unexpected end of stream while reading request body");
+        }
         return body;
+    }
+
+    private byte[] readChunkedBody(InputStream in) throws IOException {
+        ByteArrayOutputStream bodyBuffer = new ByteArrayOutputStream();
+
+        while (true) {
+            String sizeLine = readLine(in, MAX_CHUNK_LINE_BYTES);
+            if (sizeLine == null) {
+                throw new IOException("Unexpected end of stream while reading chunk size");
+            }
+
+            String sizeToken = sizeLine;
+            int extensionSeparator = sizeLine.indexOf(';');
+            if (extensionSeparator >= 0) {
+                sizeToken = sizeLine.substring(0, extensionSeparator);
+            }
+            sizeToken = sizeToken.trim();
+
+            int chunkSize;
+            try {
+                chunkSize = Integer.parseInt(sizeToken, 16);
+            } catch (NumberFormatException e) {
+                throw new IOException("Invalid chunk size: " + sizeLine);
+            }
+
+            if (chunkSize < 0) {
+                throw new IOException("Negative chunk size");
+            }
+
+            if (chunkSize == 0) {
+                // Trailer section ends with an empty line.
+                // consuming it to leave stream aligned.
+                while (true) {
+                    String trailerLine = readLine(in, MAX_CHUNK_LINE_BYTES);
+                    if (trailerLine == null || trailerLine.isEmpty()) {
+                        return bodyBuffer.toByteArray();
+                    }
+                }
+            }
+
+            if (bodyBuffer.size() + chunkSize > MAX_CHUNKED_BODY_BYTES) {
+                throw new IOException("Chunked body too large");
+            }
+
+            byte[] chunkData = readBody(in, chunkSize);
+            bodyBuffer.write(chunkData);
+            consumeRequiredCrlf(in);
+        }
+    }
+
+    private void consumeRequiredCrlf(InputStream in) throws IOException {
+        int first = in.read();
+        int second = in.read();
+        if (first != '\r' || second != '\n') {
+            throw new IOException("Invalid chunk framing: missing CRLF after chunk data");
+        }
+    }
+
+    private String readLine(InputStream in, int maxLineBytes) throws IOException {
+        ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream();
+
+        while (true) {
+            int b = in.read();
+            if (b == -1) {
+                if (lineBuffer.size() == 0) {
+                    return null;
+                }
+                throw new IOException("Unexpected end of stream while reading line");
+            }
+
+            if (lineBuffer.size() >= maxLineBytes) {
+                throw new IOException("Line too long");
+            }
+
+            if (b == '\r') {
+                int next = in.read();
+                if (next == '\n') {
+                    return lineBuffer.toString(StandardCharsets.US_ASCII.name());
+                }
+                throw new IOException("Invalid line ending");
+            }
+
+            lineBuffer.write(b);
+        }
+    }
+
+    private String getHeaderValueIgnoreCase(Map<String, String> headers, String key) {
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            if (header.getKey().equalsIgnoreCase(key)) {
+                return header.getValue();
+            }
+        }
+        return null;
     }
 }
