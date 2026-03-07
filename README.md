@@ -2,18 +2,37 @@
 
 ## Overview
 
-CoreHTTP is a custom-built, multi-threaded HTTP server implemented entirely in Java without the use of any external web frameworks or libraries. This project demonstrates understanding of the TCP/IP stack, the HTTP/1.1 protocol specifications, socket programming, and low-level system design.
+CoreHTTP is a custom-built, dependency-free HTTP server in Java (JDK 17+).  
+It is designed for learning and practical backend/frontend integration, while keeping the internals simple and transparent.
 
-The primary objective of this project is to understand how web servers operate under the hood by building one from scratch, handling everything from raw byte manipulation to request routing and concurrency management.
+This implementation includes core security and reliability hardening for request parsing, static file serving, and overload handling.
 
 ## Key Features
 
-*   **Zero Dependencies**: Built using only the standard Java Development Kit (JDK 17+).
-*   **Multi-threaded Architecture**: Utilizes a fixed thread pool to handle concurrent client connections efficiently, preventing resource exhaustion under load.
-*   **Custom HTTP Parser**: Implements a robust parser that converts raw input streams into structured HTTP Request objects, validating headers and methods.
-*   **Routing Engine**: Features a flexible routing system allowing dynamic registration of request handlers for specific endpoints.
-*   **Static File Serving**: Capable of serving HTML, CSS, and JS files from the classpath, mimicking production-grade web servers.
-*   **Robust Error Handling**: meaningful HTTP error responses are generated for invalid requests or server faults.
+* **Zero Runtime Dependencies**: Built with the Java standard library.
+* **Concurrent Request Handling**: Thread pool with bounded queue backpressure.
+* **Custom HTTP Parsing**: Supports `Content-Length` and `Transfer-Encoding: chunked` bodies.
+* **Secure Static Serving**: Normalized path resolution with traversal protection.
+* **Flexible Routing**: Route registration via a lightweight handler interface.
+* **Operational Controls**: Configurable threads, queue capacity, socket timeout, and static asset directory.
+
+## Security and Reliability Improvements
+
+The following hardening changes are implemented in the current codebase:
+
+1. **Chunked Request Body Support + Framing Validation**
+   * Added chunk-size parsing, CRLF framing checks, trailer handling, and body size limits.
+   * Rejects ambiguous `Transfer-Encoding` + `Content-Length` combinations.
+
+2. **Static File Traversal Defense**
+   * Replaced naive string checks with normalized path boundary validation.
+   * Added URL path decoding and query stripping before file resolution.
+   * Added `X-Content-Type-Options: nosniff` for safer browser behavior.
+
+3. **Timeout + Backpressure Under Load**
+   * Added socket read timeout to reduce slow-client resource exhaustion.
+   * Replaced unbounded task queue behavior with bounded queue and overload rejection (`503`).
+   * Returns `408 Request Timeout` for timed-out client reads.
 
 ## Architecture
 
@@ -46,7 +65,7 @@ classDiagram
     }
     class HttpResponse {
         -HttpStatus status
-        -String body
+        -byte[] body
     }
     class RouteHandler {
         <<interface>>
@@ -61,106 +80,81 @@ classDiagram
     RouteHandler ..> HttpResponse : Produces
 ```
 
----
+### Request Lifecycle
 
-### 1. Server Layer
-*   **HttpServer**: Manages the life cycle of the ServerSocket. It listens for incoming TCP connections on a specified port and delegates processing to the thread pool.
-*   **ConnectionHandler**: Handles the individual client interaction. It reads raw bytes, invokes the parser, resolves the route, and writes the response back to the socket.
-
-### 2. Protocol Layer
-*   **HttpParser**: Responsible for lexical analysis of the incoming byte stream. It validates the request line (Method, Path, Version) and parses headers.
-*   **HttpRequest / HttpResponse**: Immutable data models representing the state of an HTTP transaction.
-*   **HttpStatus**: An enumeration of standard HTTP status codes to ensure consistency.
-
-### 3. Routing Layer
-*   **Router**: A registry that maps URL paths to specific execution logic.
-*   **RouteHandler**: A functional interface that allows developers to define custom logic for specific endpoints.
-
-## Request Lifecycle
-
-The following sequence diagram illustrates how a request is processed from connection to response:
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Server as HttpServer
-    participant Handler as ConnectionHandler
-    participant Parser as HttpParser
-    participant Router
-    participant Logic as RouteHandler
-
-    Client->>Server: TCP Connection
-    Server->>Handler: Accept & Submit to Pool
-    activate Handler
-    Handler->>Client: Read Bytes
-    Handler->>Parser: parse(bytes)
-    Parser-->>Handler: HttpRequest
-    Handler->>Router: resolve(HttpRequest)
-    Router-->>Handler: RouteHandler
-    
-    alt Handler Found
-        Handler->>Logic: handle(HttpRequest)
-        Logic-->>Handler: HttpResponse
-    else No Handler
-        Handler->>Handler: Create 404 Response
-    end
-    
-    Handler->>Client: Write Response Bytes
-    Handler->>Client: Close Socket
-    deactivate Handler
-```
-
----
-
-1.  **Connection**: A client (browser or curl) initiates a TCP connection to the server.
-2.  **Accept**: The `HttpServer` accepts the socket and submits the task to the `ExecutorService` (Thread Pool).
-3.  **Parse**: The `ConnectionHandler` reads the input stream. The `HttpParser` converts these raw bytes into an `HttpRequest` object.
-4.  **Route**: The `Router` inspects the request path.
-    *   If a matching `RouteHandler` is found, it is executed.
-    *   If no match is found, a 404 handler is triggered.
-5.  **Process**: The handler executes business logic (e.g., reading a file or generating a JSON response) and returns an `HttpResponse`.
-6.  **Response**: The server serializes the `HttpResponse` object back into bytes and writes them to the client's output stream.
-7.  **Termination**: The socket connection is closed (unless Keep-Alive is implemented).
+1. A client opens a TCP connection.
+2. `HttpServer` accepts the socket and applies read timeout.
+3. The connection is submitted to a bounded executor queue.
+4. `ConnectionHandler` parses the HTTP request and resolves route handler.
+5. Route logic returns `HttpResponse`.
+6. Response bytes are written to the socket and the connection is closed.
 
 ## Getting Started
 
 ### Prerequisites
-*   Java Development Kit (JDK) 17 or higher.
-*   Git (for version control).
 
-### Installation
+* Java Development Kit (JDK) 17+
+* Git
 
-Clone the repository:
+### Clone
+
 ```bash
 git clone https://github.com/jhanvi857/coreHTTP.git
 cd coreHTTP
 ```
 
-### Running the Server
+### Run
 
-Helper scripts are provided to compile and run the project easily.
-
-**For Windows (PowerShell):**
+**Windows (PowerShell)**
 ```powershell
 .\scripts\run.ps1
 ```
 
-**For Linux / macOS (Bash):**
+**Linux/macOS (Bash)**
 ```bash
 ./scripts/run.sh
 ```
 
-Once started, the server will listen on port `8080`.
+Default server port is `8080`.
 
-### Verification
+### Verify
 
-Open a web browser or terminal to verify operation:
+* Browser: `http://localhost:8080/`
+* API sample:
+  ```bash
+  curl -v http://localhost:8080/hello
+  ```
 
-*   **Browser**: Visit `http://localhost:8080/` to see the served static HTML page.
-*   **Terminal**: 
-    ```bash
-    curl -v http://localhost:8080/hello
-    ```
+## Runtime Configuration
+
+CoreHTTP reads settings from JVM properties first, then environment variables:
+
+| Purpose | JVM Property | Environment Variable | Default |
+|---|---|---|---|
+| Static file root | `corehttp.staticDir` | `COREHTTP_STATIC_DIR` | Auto-resolved (`src/main/resources/public` / `target/public` candidates) |
+| Worker threads | `corehttp.threads` | `COREHTTP_THREADS` | `10` |
+| Queue capacity | `corehttp.queueCapacity` | `COREHTTP_QUEUE_CAPACITY` | `100` |
+| Socket read timeout (ms) | `corehttp.socketTimeoutMs` | `COREHTTP_SOCKET_TIMEOUT_MS` | `15000` |
+
+Example:
+
+```bash
+java -Dcorehttp.staticDir="C:/apps/frontend/dist" -Dcorehttp.threads=20 -Dcorehttp.queueCapacity=200 -Dcorehttp.socketTimeoutMs=15000 -cp out com.jhanvi857.coreHTTP.server.HttpServer
+```
+
+## Using CoreHTTP in Other Projects
+
+If you want to connect a separate Java backend to your frontend:
+
+1. Reuse `Router` and `RouteHandler` to register your endpoints.
+2. Return JSON using `HttpResponse` with `Content-Type: application/json`.
+3. Point `corehttp.staticDir` to your frontend build output (`dist`, `build`, etc.).
+
+Minimal example concept:
+
+* Route: `/api/users`
+* Handler: fetch data from your service layer
+* Response: serialized JSON body with status `200`
 
 ## Project Structure
 
@@ -168,24 +162,35 @@ Open a web browser or terminal to verify operation:
 src/
 ├── main/
 │   ├── java/com/jhanvi857/coreHTTP/
-│   │   ├── exception/      # Custom exceptions (e.g., ClientDisconnected)
-│   │   ├── protocol/       # HTTP Request/Response models and Parser
-│   │   ├── routing/        # Router and Handler interfaces
-│   │   └── server/         # Core TCP server and Connection management
+│   │   ├── exception/
+│   │   ├── protocol/
+│   │   ├── routing/
+│   │   └── server/
 │   └── resources/
-│       └── public/         # Static assets (HTML, CSS, JS)
+│       └── public/
 scripts/
-├── run.ps1                 # Windows build/run script
-└── run.sh                  # Linux/Mac build/run script
+├── run.ps1
+└── run.sh
 ```
+
+## Current Limitations
+
+To keep scope intentionally lightweight, the following are not implemented yet:
+
+* HTTPS/TLS termination
+* Authentication/authorization middleware
+* Keep-Alive and connection reuse
+* HTTP/2 support
+* Structured logging framework
 
 ## Future Enhancements
 
-*   **HTTP/1.1 Keep-Alive**: Reusing TCP connections for multiple requests to improve performance.
-*   **Dynamic Content**: Support for templates to render dynamic HTML.
-*   **Logging System**: Replace standard output with a proper logging framework like SLF4J.
-*   **Configuration**: Load port numbers and thread pool size from an external properties file.
+* Keep-Alive support
+* Better routing semantics (method-aware patterns)
+* Graceful shutdown hooks
+* Optional integration with structured logging (SLF4J)
+* Publishable Maven artifact for dependency-based reuse
 
 ---
 
-**CoreHTTP** stands as a testament to first-principles thinking in software engineering, providing a transparent, dependency-free implementation of the machinery that powers the modern web.
+CoreHTTP provides a clear, practical foundation for understanding HTTP server internals while being usable for small full-stack Java experiments and demos.
