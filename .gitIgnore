@@ -1,3 +1,6 @@
+.maven/
+.mvn/
+*.txt
 out/
 target/
 *.class

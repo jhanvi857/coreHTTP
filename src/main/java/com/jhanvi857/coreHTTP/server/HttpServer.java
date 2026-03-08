@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -20,8 +19,9 @@ import com.jhanvi857.coreHTTP.protocol.HttpStatus;
 public class HttpServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
     private final int port;
-    private final ExecutorService threadPool;
+    private final ThreadPoolExecutor threadPool; // Changed to ThreadPoolExecutor for shutdown control
     private final int socketReadTimeoutMs;
+    private volatile boolean running = false;
 
     public HttpServer(int port) {
         this.port = port;
@@ -33,7 +33,7 @@ public class HttpServer {
         // Why this change:
         // FixedThreadPool uses an unbounded queue by default. Under overload, memory
         // can grow endlessly.
-        // Bounded queue gives us controlled backpressure and lets us reject quickly
+        // Bounded queue gives controlled backpressure and lets us reject quickly
         // with 503.
         this.threadPool = new ThreadPoolExecutor(
                 workerThreads,
@@ -47,31 +47,58 @@ public class HttpServer {
     }
 
     public void start(com.jhanvi857.coreHTTP.routing.Router router) {
+        this.running = true;
+
+        // Registering a shutdown hook to handle SIGTERM (Ctrl+C).
+        // This ensures in-flight requests finish before the JVM exits.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutdown signal received. Starting graceful shutdown...");
+            this.running = false;
+
+            // 1. Stop accepting new connections at the pool level
+            threadPool.shutdown();
+            try {
+                // 2. Wait for current tasks to finish -30 sec
+                if (!threadPool.awaitTermination(30, TimeUnit.SECONDS)) {
+                    logger.warn("Forcing immediate shutdown - some requests did not finish in time.");
+                    threadPool.shutdownNow();
+                }
+                logger.info("CoreHTTP server stopped successfully.");
+            } catch (InterruptedException e) {
+                threadPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }));
+
         logger.info("Starting CoreHTTP TCP server on port {}", port);
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while (true) {
-                logger.debug("Waiting for new connection...");
-                Socket clienSocket = serverSocket.accept();
-                logger.info("Accepted connection from {}", clienSocket.getRemoteSocketAddress());
+            // Only accept new connections while the 'running' flag is true
+            while (running) {
+                serverSocket.setSoTimeout(1000);
+                Socket clientSocket;
+                try {
+                    clientSocket = serverSocket.accept();
+                } catch (java.net.SocketTimeoutException e) {
+                    continue;
+                }
 
-                // Slow-client defense: read operations now fail fast instead of blocking
-                // forever.
-                clienSocket.setSoTimeout(socketReadTimeoutMs);
+                logger.info("Accepted connection from {}", clientSocket.getRemoteSocketAddress());
+                clientSocket.setSoTimeout(socketReadTimeoutMs);
 
-                ConnectionHandler handler = new ConnectionHandler(clienSocket, router);
+                ConnectionHandler handler = new ConnectionHandler(clientSocket, router);
 
-                // Backpressure behavior: queue saturation throws rejection and we respond with
-                // 503.
                 try {
                     threadPool.execute(handler);
                 } catch (RejectedExecutionException rejected) {
-                    logger.warn("Server overloaded! Rejecting connection from {}",
-                            clienSocket.getRemoteSocketAddress());
-                    sendServiceUnavailable(clienSocket);
+                    logger.warn("Server overloaded or shutting down! Rejecting {}",
+                            clientSocket.getRemoteSocketAddress());
+                    sendServiceUnavailable(clientSocket);
                 }
             }
         } catch (IOException e) {
-            logger.error("Critial server failure: {}", e.getMessage(), e);
+            if (running) {
+                logger.error("Critical server failure: {}", e.getMessage(), e);
+            }
         }
     }
 
@@ -93,6 +120,9 @@ public class HttpServer {
 
         // static file handler for frontend assets
         router.register("/", new StaticFileHandler(staticDir));
+        router.register("/_health", request -> new com.jhanvi857.coreHTTP.protocol.HttpResponse(
+                com.jhanvi857.coreHTTP.protocol.HttpStatus.OK, "{\"status\": \"UP\"}"));
+
         router.register("/hello", request -> new com.jhanvi857.coreHTTP.protocol.HttpResponse(
                 com.jhanvi857.coreHTTP.protocol.HttpStatus.OK, "Hello from Router!"));
 
