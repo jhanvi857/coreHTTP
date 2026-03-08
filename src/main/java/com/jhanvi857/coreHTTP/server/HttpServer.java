@@ -1,11 +1,15 @@
 package com.jhanvi857.coreHTTP.server;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -49,18 +53,14 @@ public class HttpServer {
     public void start(com.jhanvi857.coreHTTP.routing.Router router) {
         this.running = true;
 
-        // Registering a shutdown hook to handle SIGTERM (Ctrl+C).
-        // This ensures in-flight requests finish before the JVM exits.
+        // Shutdown Hook
+        // Ensure to clean up and finish current requests when stopping.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutdown signal received. Starting graceful shutdown...");
             this.running = false;
-
-            // 1. Stop accepting new connections at the pool level
             threadPool.shutdown();
             try {
-                // 2. Wait for current tasks to finish -30 sec
                 if (!threadPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                    logger.warn("Forcing immediate shutdown - some requests did not finish in time.");
                     threadPool.shutdownNow();
                 }
                 logger.info("CoreHTTP server stopped successfully.");
@@ -70,36 +70,80 @@ public class HttpServer {
             }
         }));
 
-        logger.info("Starting CoreHTTP TCP server on port {}", port);
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            // Only accept new connections while the 'running' flag is true
+        try {
+            // 1. Open the selector to check whether current client is sending more request
+            // or have just occupied thread.
+            Selector selector = Selector.open();
+
+            // 2. Open the server channel to accept new client connections.
+            ServerSocketChannel serverChannel = ServerSocketChannel.open();
+            serverChannel.bind(new InetSocketAddress(port));
+
+            // set non-blocking mode
+            serverChannel.configureBlocking(false);
+
+            // 3. Tell the selector we want to know when someone accepts our door
+            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+            logger.info("CoreHTTP NIO server listening on port {}", port);
+
+            // nio main loop.
             while (running) {
-                serverSocket.setSoTimeout(1000);
-                Socket clientSocket;
-                try {
-                    clientSocket = serverSocket.accept();
-                } catch (java.net.SocketTimeoutException e) {
+                // Wait for an event
+                if (selector.select(1000) == 0) {
                     continue;
                 }
 
-                logger.info("Accepted connection from {}", clientSocket.getRemoteSocketAddress());
-                clientSocket.setSoTimeout(socketReadTimeoutMs);
+                // Look at all the events that occurred
+                Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+                while (keys.hasNext()) {
+                    SelectionKey key = keys.next();
+                    // Removing so don't process it twice
+                    keys.remove();
 
-                ConnectionHandler handler = new ConnectionHandler(clientSocket, router);
+                    if (!key.isValid())
+                        continue;
 
-                try {
-                    threadPool.execute(handler);
-                } catch (RejectedExecutionException rejected) {
-                    logger.warn("Server overloaded or shutting down! Rejecting {}",
-                            clientSocket.getRemoteSocketAddress());
-                    sendServiceUnavailable(clientSocket);
+                    if (key.isAcceptable()) {
+                        // Accept new client
+                        acceptNewClient(selector, serverChannel);
+                    } else if (key.isReadable()) {
+                        // An existing client has sent us req.
+                        // stop watching this client temporarily so worker thread can handle it without
+                        // selector firing again.
+                        key.interestOps(0);
+
+                        SocketChannel clientChannel = (SocketChannel) key.channel();
+
+                        // Hand the work to our pool of background threads
+                        try {
+                            threadPool.execute(new ConnectionHandler(clientChannel, router, key));
+                        } catch (RejectedExecutionException rejected) {
+                            logger.warn("Server busy! Rejecting connection.");
+                            clientChannel.close();
+                        }
+                    }
                 }
             }
+
+            selector.close();
+            serverChannel.close();
+
         } catch (IOException e) {
             if (running) {
-                logger.error("Critical server failure: {}", e.getMessage(), e);
+                logger.error("Critical NIO failure: {}", e.getMessage(), e);
             }
         }
+    }
+
+    private void acceptNewClient(Selector selector, ServerSocketChannel serverChannel) throws IOException {
+        SocketChannel clientChannel = serverChannel.accept();
+        // Client must be also non-blocking
+        clientChannel.configureBlocking(false);
+
+        // Start watching this client for when data is ready to read
+        clientChannel.register(selector, SelectionKey.OP_READ);
+        logger.info("Accepted NIO connection from {}", clientChannel.getRemoteAddress());
     }
 
     public static void main(String[] args) {
@@ -153,19 +197,19 @@ public class HttpServer {
         return cwd.resolve("src/main/resources/public").normalize().toString();
     }
 
-    private void sendServiceUnavailable(Socket socket) {
+    private void sendServiceUnavailable(SocketChannel channel) {
         try {
             HttpResponse response = new HttpResponse(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "<h1>503 Service Unavailable</h1><p>Server is busy. Please retry shortly.</p>");
-            response.writeTo(socket.getOutputStream());
+
+            // Simple blocking write for rejection
+            response.writeTo(java.nio.channels.Channels.newOutputStream(channel));
         } catch (IOException ignored) {
-            logger.error("Failed to transmit 503 Service Unavailable response: {}", ignored.getMessage());
         } finally {
             try {
-                socket.close();
+                channel.close();
             } catch (IOException ignored) {
-                logger.error("Failed to close socket for rejected connection: {}", ignored.getMessage());
             }
         }
     }
