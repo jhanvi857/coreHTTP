@@ -29,6 +29,15 @@ public class HttpResponse {
         this.headers.put(key, value);
     }
 
+    // helpers.
+    public HttpStatus getStatus() {
+        return status;
+    }
+
+    public Map<String, String> getHeadersMap() {
+        return headers;
+    }
+
     public void writeTo(OutputStream out) throws IOException {
         StringBuilder response = new StringBuilder();
 

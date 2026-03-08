@@ -25,64 +25,75 @@ public class ConnectionHandler implements Runnable {
     public void run() {
         logger.debug("Handling client: {}", socket.getRemoteSocketAddress());
 
-        InputStream in = null;
-        try {
-            in = socket.getInputStream();
-
-            // phase 3 entry point
+        try (InputStream in = socket.getInputStream()) {
             HttpParser parser = new HttpParser();
-            HttpRequest request = parser.parse(in);
 
-            // debugging with structured logs
-            logger.info("{} {} protocol={}", request.getMethod(), request.getPath(), request.getVersion());
-            logger.debug("Headers: {}", request.getHeaders());
+            // Keep-Alive Loop
+            // keep the connection open as long as the client wants to talk and the socket
+            // hasn't timed out.
+            boolean keepAlive = true;
+            while (keepAlive && !socket.isClosed()) {
+                HttpRequest request;
+                try {
+                    request = parser.parse(in);
+                } catch (HttpParseException e) {
+                    logger.warn("Received a broken request from {}: {}", socket.getRemoteSocketAddress(),
+                            e.getMessage());
+                    sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.BAD_REQUEST,
+                            "Bad Request: " + e.getMessage());
+                    // closing the connection on parse errors
+                    break;
+                } catch (SocketTimeoutException e) {
+                    // if the client stays connected but doesn't send a new request
+                    logger.debug("Keep-alive connection timed out for {}", socket.getRemoteSocketAddress());
+                    break;
+                } catch (java.io.IOException e) {
 
-            // Phase 5 & 8: Routing and Response
-            com.jhanvi857.coreHTTP.routing.RouteHandler handler = router.resolve(request);
-            com.jhanvi857.coreHTTP.protocol.HttpResponse response;
+                    break;
+                }
 
-            if (handler != null) {
-                response = handler.handle(request);
-            } else {
-                response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
-                        com.jhanvi857.coreHTTP.protocol.HttpStatus.NOT_FOUND,
-                        "<h1>404 Not Found</h1>");
+                // Deciding if should keep the connection open based on the connection header
+                String connectionHeader = request.getHeaders().getOrDefault("Connection", "close");
+                keepAlive = connectionHeader.equalsIgnoreCase("keep-alive");
+
+                // Route the request and get a response
+                com.jhanvi857.coreHTTP.routing.RouteHandler handler = router.resolve(request);
+                com.jhanvi857.coreHTTP.protocol.HttpResponse response;
+
+                if (handler != null) {
+                    response = handler.handle(request);
+                } else {
+                    response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
+                            com.jhanvi857.coreHTTP.protocol.HttpStatus.NOT_FOUND,
+                            "<h1>404 Not Found</h1>");
+                }
+
+                // If not keeping the connection, tell the client we are closing it
+                if (!keepAlive) {
+                    response.addHeader("Connection", "close");
+                } else {
+                    response.addHeader("Connection", "keep-alive");
+                }
+
+                // Send the response back to browser
+                response.writeTo(socket.getOutputStream());
+
+                // If it's a one-off request, stop the loop
+                if (!keepAlive) {
+                    break;
+                }
             }
-
-            response.writeTo(socket.getOutputStream());
-
-        } catch (HttpParseException e) {
-            logger.warn("Received malformed HTTP request from {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
-            sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.BAD_REQUEST, "Bad Request: " + e.getMessage());
-
-        } catch (SocketTimeoutException e) {
-            // Timeout is expected when a client opens a connection but sends data too
-            // slowly.
-            // We return 408 instead of 500 so clients know the request timed out.
-            logger.warn("Request timed out for client {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
-            sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.REQUEST_TIMEOUT,
-                    "Request Timeout");
-
         } catch (Exception e) {
-            logger.error("Internal processing error for client {}: {}", socket.getRemoteSocketAddress(), e.getMessage(),
-                    e);
-            // sending 500 only when the socket is still open and not already closed
             if (!socket.isClosed()) {
-                sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Internal Server Error");
+                logger.error("Internal error handling client {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
+                sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.INTERNAL_SERVER_ERROR, "Internal Error");
             }
-
         } finally {
             try {
-                if (in != null) {
-                    in.close();
-                }
                 if (!socket.isClosed()) {
                     socket.close();
                 }
             } catch (Exception ignored) {
-                logger.error("Failed to clean up client connection for {}: {}", socket.getRemoteSocketAddress(),
-                        ignored.getMessage());
             }
         }
     }
