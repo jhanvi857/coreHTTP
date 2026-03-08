@@ -7,82 +7,98 @@ import com.jhanvi857.coreHTTP.exception.HttpParseException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConnectionHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ConnectionHandler.class);
 
-    private final Socket socket;
+    private final SocketChannel channel;
     private final com.jhanvi857.coreHTTP.routing.Router router;
+    private final SelectionKey key;
 
-    public ConnectionHandler(Socket socket, com.jhanvi857.coreHTTP.routing.Router router) {
-        this.socket = socket;
+    public ConnectionHandler(SocketChannel channel, com.jhanvi857.coreHTTP.routing.Router router, SelectionKey key) {
+        this.channel = channel;
         this.router = router;
+        this.key = key;
     }
 
     @Override
     public void run() {
-        logger.debug("Handling client: {}", socket.getRemoteSocketAddress());
-
-        InputStream in = null;
         try {
-            in = socket.getInputStream();
-
-            // phase 3 entry point
+            // use java.nio.channels.Channels to bridge the NIO channel to a standard stream
+            java.io.InputStream in = java.nio.channels.Channels.newInputStream(channel);
             HttpParser parser = new HttpParser();
-            HttpRequest request = parser.parse(in);
 
-            // debugging with structured logs
-            logger.info("{} {} protocol={}", request.getMethod(), request.getPath(), request.getVersion());
-            logger.debug("Headers: {}", request.getHeaders());
+            // handles multiple requests on the same connection.
+            boolean keepAlive = true;
+            while (keepAlive && channel.isOpen()) {
+                HttpRequest request;
+                try {
+                    request = parser.parse(in);
+                } catch (HttpParseException e) {
+                    logger.warn("Malformed request from client: {}", e.getMessage());
+                    sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.BAD_REQUEST, "Bad Request");
+                    break;
+                } catch (SocketTimeoutException e) {
+                    // Connection idle for too long
+                    break;
+                } catch (java.io.IOException e) {
+                    // Client closed connection
+                    break;
+                }
 
-            // Phase 5 & 8: Routing and Response
-            com.jhanvi857.coreHTTP.routing.RouteHandler handler = router.resolve(request);
-            com.jhanvi857.coreHTTP.protocol.HttpResponse response;
+                String connectionHeader = request.getHeaders().getOrDefault("Connection", "close");
+                keepAlive = connectionHeader.equalsIgnoreCase("keep-alive");
 
-            if (handler != null) {
-                response = handler.handle(request);
-            } else {
-                response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
-                        com.jhanvi857.coreHTTP.protocol.HttpStatus.NOT_FOUND,
-                        "<h1>404 Not Found</h1>");
+                com.jhanvi857.coreHTTP.routing.RouteHandler handler = router.resolve(request);
+                com.jhanvi857.coreHTTP.protocol.HttpResponse response;
+
+                if (handler != null) {
+                    response = handler.handle(request);
+                } else {
+                    response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
+                            com.jhanvi857.coreHTTP.protocol.HttpStatus.NOT_FOUND,
+                            "<h1>404 Not Found</h1>");
+                }
+
+                if (!keepAlive) {
+                    response.addHeader("Connection", "close");
+                } else {
+                    response.addHeader("Connection", "keep-alive");
+                }
+
+                // Send the response
+                response.writeTo(java.nio.channels.Channels.newOutputStream(channel));
+
+                if (!keepAlive) {
+                    break;
+                }
+
+                // If the stream is empty for now, stop the thread and wait for Selector
+                if (in.available() == 0) {
+                    break;
+                }
             }
-
-            response.writeTo(socket.getOutputStream());
-
-        } catch (HttpParseException e) {
-            logger.warn("Received malformed HTTP request from {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
-            sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.BAD_REQUEST, "Bad Request: " + e.getMessage());
-
-        } catch (SocketTimeoutException e) {
-            // Timeout is expected when a client opens a connection but sends data too
-            // slowly.
-            // We return 408 instead of 500 so clients know the request timed out.
-            logger.warn("Request timed out for client {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
-            sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.REQUEST_TIMEOUT,
-                    "Request Timeout");
-
         } catch (Exception e) {
-            logger.error("Internal processing error for client {}: {}", socket.getRemoteSocketAddress(), e.getMessage(),
-                    e);
-            // sending 500 only when the socket is still open and not already closed
-            if (!socket.isClosed()) {
-                sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Internal Server Error");
+            if (channel.isOpen()) {
+                logger.error("Error processing client request: {}", e.getMessage());
             }
-
         } finally {
-            try {
-                if (in != null) {
-                    in.close();
+            // THE NIO HANDOFF:
+            // If want to keep the connection, register it back with the Selector for READ
+            // events.
+            // If not,close it.
+            if (key.isValid() && channel.isOpen()) {
+                key.interestOps(SelectionKey.OP_READ);
+                key.selector().wakeup();
+            } else {
+                try {
+                    channel.close();
+                } catch (java.io.IOException ignored) {
                 }
-                if (!socket.isClosed()) {
-                    socket.close();
-                }
-            } catch (Exception ignored) {
-                logger.error("Failed to clean up client connection for {}: {}", socket.getRemoteSocketAddress(),
-                        ignored.getMessage());
             }
         }
     }
@@ -91,10 +107,9 @@ public class ConnectionHandler implements Runnable {
         try {
             com.jhanvi857.coreHTTP.protocol.HttpResponse response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
                     status, "<h1>" + status.getCode() + " " + message + "</h1>");
-            response.writeTo(socket.getOutputStream());
+            response.writeTo(java.nio.channels.Channels.newOutputStream(channel));
         } catch (java.io.IOException e) {
-            logger.error("Failed to transmit error response ({}) to {}: {}", status, socket.getRemoteSocketAddress(),
-                    e.getMessage());
+            logger.error("Failed to send error: {}", e.getMessage());
         }
     }
 }

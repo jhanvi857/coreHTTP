@@ -59,18 +59,21 @@ public class StaticFileHandler implements RouteHandler {
 
         if (Files.exists(requestedFile) && !Files.isDirectory(requestedFile)) {
             logger.debug("Serving file: {}", requestedFile);
-            byte[] fileBytes = Files.readAllBytes(requestedFile);
 
-            HttpResponse response = new HttpResponse(HttpStatus.OK, fileBytes);
-
-            // Using OS/JDK MIME probing first, then predictable extension fallback.
+            // High Performance: Zero-Copy Preparation
+            // Instead of reading the whole file into memory - slow,
+            // prepare a reference to the file on disk.
+            long fileSize = Files.size(requestedFile);
             String mimeType = Files.probeContentType(requestedFile);
             if (mimeType == null) {
                 mimeType = detectMimeTypeByExtension(requestedFile);
             }
-            response.addHeader("Content-Type", mimeType);
 
-            // Browser safety header- helps prevent MIME confusion or XSS vectors.
+            // using FileHttpResponse that knows how to stream the file directly from the
+            // disk to the network later.
+            HttpResponse response = new FileHttpResponse(HttpStatus.OK, requestedFile, fileSize);
+            response.addHeader("Content-Type", mimeType);
+            response.addHeader("Content-Length", String.valueOf(fileSize));
             response.addHeader("X-Content-Type-Options", "nosniff");
 
             return response;
