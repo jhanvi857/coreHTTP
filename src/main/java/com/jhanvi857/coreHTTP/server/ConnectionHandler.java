@@ -7,8 +7,11 @@ import com.jhanvi857.coreHTTP.exception.HttpParseException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.Socket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConnectionHandler implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(ConnectionHandler.class);
 
     private final Socket socket;
     private final com.jhanvi857.coreHTTP.routing.Router router;
@@ -20,7 +23,7 @@ public class ConnectionHandler implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Handling client: " + socket.getRemoteSocketAddress());
+        logger.debug("Handling client: {}", socket.getRemoteSocketAddress());
 
         InputStream in = null;
         try {
@@ -30,11 +33,9 @@ public class ConnectionHandler implements Runnable {
             HttpParser parser = new HttpParser();
             HttpRequest request = parser.parse(in);
 
-            // debugging.
-            System.out.println("METHOD  : " + request.getMethod());
-            System.out.println("PATH    : " + request.getPath());
-            System.out.println("VERSION : " + request.getVersion());
-            System.out.println("HEADERS : " + request.getHeaders());
+            // debugging with structured logs
+            logger.info("{} {} protocol={}", request.getMethod(), request.getPath(), request.getVersion());
+            logger.debug("Headers: {}", request.getHeaders());
 
             // Phase 5 & 8: Routing and Response
             com.jhanvi857.coreHTTP.routing.RouteHandler handler = router.resolve(request);
@@ -51,18 +52,20 @@ public class ConnectionHandler implements Runnable {
             response.writeTo(socket.getOutputStream());
 
         } catch (HttpParseException e) {
-            System.out.println("Bad HTTP request: " + e.getMessage());
+            logger.warn("Received malformed HTTP request from {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
             sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.BAD_REQUEST, "Bad Request: " + e.getMessage());
 
         } catch (SocketTimeoutException e) {
-            // Timeout is expected when a client opens a connection but sends data too slowly.
+            // Timeout is expected when a client opens a connection but sends data too
+            // slowly.
             // We return 408 instead of 500 so clients know the request timed out.
-            System.out.println("Request timed out: " + e.getMessage());
+            logger.warn("Request timed out for client {}: {}", socket.getRemoteSocketAddress(), e.getMessage());
             sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.REQUEST_TIMEOUT,
                     "Request Timeout");
 
         } catch (Exception e) {
-            System.out.println("Connection error: " + e.getMessage());
+            logger.error("Internal processing error for client {}: {}", socket.getRemoteSocketAddress(), e.getMessage(),
+                    e);
             // sending 500 only when the socket is still open and not already closed
             if (!socket.isClosed()) {
                 sendErrorResponse(com.jhanvi857.coreHTTP.protocol.HttpStatus.INTERNAL_SERVER_ERROR,
@@ -78,7 +81,8 @@ public class ConnectionHandler implements Runnable {
                     socket.close();
                 }
             } catch (Exception ignored) {
-                System.out.println("Error in handling client from connection handler" + ignored.getMessage());
+                logger.error("Failed to clean up client connection for {}: {}", socket.getRemoteSocketAddress(),
+                        ignored.getMessage());
             }
         }
     }
@@ -89,7 +93,8 @@ public class ConnectionHandler implements Runnable {
                     status, "<h1>" + status.getCode() + " " + message + "</h1>");
             response.writeTo(socket.getOutputStream());
         } catch (java.io.IOException e) {
-            System.out.println("Failed to send error response: " + e.getMessage());
+            logger.error("Failed to transmit error response ({}) to {}: {}", status, socket.getRemoteSocketAddress(),
+                    e.getMessage());
         }
     }
 }
