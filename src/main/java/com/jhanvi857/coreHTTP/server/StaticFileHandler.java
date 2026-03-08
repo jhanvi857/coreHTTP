@@ -12,13 +12,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StaticFileHandler implements RouteHandler {
-
+    private static final Logger logger = LoggerFactory.getLogger(StaticFileHandler.class);
     private final Path baseDir;
 
     public StaticFileHandler(String baseDir) {
-        // Canonical root path ensures that all requests are constrained inside this directory.
+        // Canonical root path ensures that all requests are constrained inside this
+        // directory.
         this.baseDir = Paths.get(baseDir).toAbsolutePath().normalize();
     }
 
@@ -27,7 +30,8 @@ public class StaticFileHandler implements RouteHandler {
         String rawPath = request.getPath();
         String decodedPath;
 
-        // Decodeing %xx sequences first so encoded traversal payloads are visible to validation logic.
+        // Decodeing %xx sequences first so encoded traversal payloads are visible to
+        // validation logic.
         try {
             decodedPath = URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException ex) {
@@ -49,10 +53,12 @@ public class StaticFileHandler implements RouteHandler {
         Path requestedFile = baseDir.resolve(relativePath).normalize();
 
         if (!requestedFile.startsWith(baseDir)) {
+            logger.warn("Path traversal attempt detected: {} (normalized to {})", rawPath, requestedFile);
             return new HttpResponse(HttpStatus.BAD_REQUEST, "Invalid path");
         }
 
         if (Files.exists(requestedFile) && !Files.isDirectory(requestedFile)) {
+            logger.debug("Serving file: {}", requestedFile);
             byte[] fileBytes = Files.readAllBytes(requestedFile);
 
             HttpResponse response = new HttpResponse(HttpStatus.OK, fileBytes);
@@ -69,6 +75,7 @@ public class StaticFileHandler implements RouteHandler {
 
             return response;
         } else {
+            logger.info("Static file not found: {}", requestedFile);
             return new HttpResponse(HttpStatus.NOT_FOUND, "<h1>404 File Not Found</h1>");
         }
     }
