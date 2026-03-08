@@ -8,34 +8,47 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jhanvi857.coreHTTP.exception.HttpParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class HttpParser {
 
+    private static final Logger logger = LoggerFactory.getLogger(HttpParser.class);
     private static final int MAX_HEADER_SIZE_BYTES = 8192;
     private static final int MAX_CHUNK_LINE_BYTES = 1024;
     private static final int MAX_CHUNKED_BODY_BYTES = 10 * 1024 * 1024;
 
-    public HttpRequest parse(InputStream in) throws Exception {
-        // Reading headers
+    public HttpRequest parse(InputStream in) throws IOException, HttpParseException {
+        logger.debug("Starting request parsing...");
+
+        // Accurate header reading to ensure we stop exactly at the \r\n\r\n boundary
         String headerBlock = readHeaderBlock(in);
-        if (headerBlock.isEmpty()) {
+        if (headerBlock == null || headerBlock.isEmpty()) {
+            logger.warn("Received empty or null request block");
             throw new HttpParseException("Empty request");
         }
 
+        // Split by the exact \r\n sequence without global trim() to preserve values
         String[] lines = headerBlock.split("\r\n");
         if (lines.length == 0) {
+            logger.warn("Invalid HTTP request: empty header block");
             throw new HttpParseException("Invalid HTTP request");
         }
+
         // Parsing Request Line
         String reqLine = lines[0];
+        logger.debug("Parsing request line: {}", reqLine);
         String[] parts = reqLine.split(" ");
-        if (parts.length != 3) {
-            throw new HttpParseException("Invalid request line: " + reqLine);
+        if (parts.length < 3) {
+            logger.warn("Malformed request line: {}", reqLine);
+            throw new HttpParseException("Malformed request line: " + reqLine);
         }
+
         String method = parts[0];
         String path = parts[1];
         String version = parts[2];
         if (!path.startsWith("/")) {
+            logger.warn("Invalid path in request line: {}", path);
             throw new HttpParseException("Invalid path: " + path);
         }
 
@@ -47,8 +60,12 @@ public final class HttpParser {
         Map<String, String> headers = new HashMap<>();
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i];
+            if (line.isEmpty())
+                continue; // Safety skip for accidental extra \r\n
+
             int colonIndex = line.indexOf(":");
             if (colonIndex == -1) {
+                logger.warn("Malformed header line (skipping): {}", line);
                 continue;
             }
             String key = line.substring(0, colonIndex).trim();
@@ -61,8 +78,6 @@ public final class HttpParser {
         String transferEncoding = getHeaderValueIgnoreCase(headers, "Transfer-Encoding");
         String contentLengthValue = getHeaderValueIgnoreCase(headers, "Content-Length");
 
-        // We prioritize explicit framing rules to avoid ambiguous message bodies.
-        // Accepting both Content-Length and chunked at once can open request-smuggling issues.
         if (transferEncoding != null) {
             if (!"chunked".equalsIgnoreCase(transferEncoding)) {
                 throw new HttpParseException("Unsupported Transfer-Encoding: " + transferEncoding);
@@ -81,10 +96,11 @@ public final class HttpParser {
                     body = readBody(in, contentLength);
                 }
             } catch (NumberFormatException e) {
-                throw new HttpParseException("Invalid Content-Length");
+                throw new HttpParseException("Invalid Content-Length: " + contentLengthValue);
             }
         }
 
+        logger.info("{} {} protocol={}", method, path, version);
         return new HttpRequest(path, method, version, headers, body);
     }
 
@@ -99,6 +115,7 @@ public final class HttpParser {
         while ((b = in.read()) != -1) {
             buffer.write(b);
 
+            // Detecting \r\n\r\n sequence as the end of the header block
             if (b == '\r') {
                 if (state == 0)
                     state = 1;
@@ -109,17 +126,18 @@ public final class HttpParser {
             } else if (b == '\n') {
                 if (state == 1)
                     state = 2;
-                else if (state == 3)
-                    return buffer.toString(StandardCharsets.US_ASCII.name()).trim();
-                else
+                else if (state == 3) {
+                    // Correct: headers are ready. Trimming outer padding, not line endings.
+                    return buffer.toString(StandardCharsets.US_ASCII.name());
+                } else
                     state = 0;
             } else {
                 state = 0;
             }
 
-            // Safety limit for headers
+            // Safety limit for headers (prevents memory attacks)
             if (buffer.size() > MAX_HEADER_SIZE_BYTES) {
-                throw new IOException("Request headers too large");
+                throw new IOException("Request headers too large (max: " + MAX_HEADER_SIZE_BYTES + ")");
             }
         }
         return buffer.toString(StandardCharsets.US_ASCII.name());
