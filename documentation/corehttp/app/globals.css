@@ -1,0 +1,281 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background-light: #ffffff;
+  --color-background-dark: #000000;
+  --color-foreground-light: #171717;
+  --color-foreground-dark: #ededed;
+
+  --color-brand: #000000;
+  --color-brand-light: #ffffff;
+
+  --color-border-light: #eaeaea;
+  --color-border-dark: #333333;
+
+  --color-card-light: #ffffff;
+  --color-card-dark: #0a0a0a;
+
+  --color-muted-light: #fafafa;
+  --color-muted-dark: #111111;
+
+  --color-primary-light: #000000;
+  --color-primary-dark: #ffffff;
+
+  --color-primary-foreground-light: #ffffff;
+  --color-primary-foreground-dark: #000000;
+
+  --animate-float: float 8s ease-in-out infinite;
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+:root {
+  --selection: rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --bg-primary: #ffffff;
+  --fg-primary: #171717;
+  --border-muted: rgba(0, 0, 0, 0.1);
+  --bg-card: #ffffff;
+  --bg-muted: #fafafa;
+  --btn-bg: #000000;
+  --btn-fg: #ffffff;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark :root,
+html.dark {
+  --selection: rgba(255, 255, 255, 0.2);
+  --shadow-card: 0 0 0 1px #333, 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 0 0 1px #555, 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --bg-primary: #000000;
+  --fg-primary: #ededed;
+  --border-muted: rgba(255, 255, 255, 0.1);
+  --bg-card: #0a0a0a;
+  --bg-muted: #111111;
+  --btn-bg: #ffffff;
+  --btn-fg: #000000;
+}
+
+::selection {
+  background-color: var(--selection);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: var(--bg-primary);
+  color: var(--fg-primary);
+}
+
+body {
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: inherit;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container-page {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 1.5rem;
+}
+
+/* Typography specifics */
+.text-balance {
+  text-wrap: balance;
+}
+
+.title-gradient {
+  background: linear-gradient(to right bottom, #111827, #4b5563);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html.dark .title-gradient {
+  background: linear-gradient(to right bottom, #ffffff, #9ca3af);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Surface Cards */
+.surface-card {
+  border: 1px solid var(--border-muted);
+  border-radius: 0.75rem;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease-in-out;
+}
+
+.surface-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.panel-soft {
+  border: 1px solid var(--border-muted);
+  border-radius: 0.75rem;
+  background: var(--bg-muted);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.625rem 1rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--fg-primary);
+  border: 1px solid var(--border-muted);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-muted);
+}
+
+/* Next.js style background pattern */
+.site-grid-bg {
+  position: relative;
+}
+
+.site-grid-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+html.dark .site-grid-bg::before {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+/* Overriding specific utility classes for strict Next.js dark mode */
+html.dark .text-slate-900 {
+  color: #ededed !important;
+}
+
+html.dark .text-slate-800 {
+  color: #a1a1aa !important;
+}
+
+html.dark .text-slate-700 {
+  color: #888 !important;
+}
+
+html.dark .text-slate-600 {
+  color: #888 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #666 !important;
+}
+
+@media (max-width: 768px) {
+  .container-page {
+    padding: 0 1rem;
+  }
+}
+
+/* Bulletproof Utility Fallbacks */
+.border-muted {
+  border-color: var(--border-muted) !important;
+}
+
+.bg-muted {
+  background-color: var(--bg-muted) !important;
+}
+
+.bg-card {
+  background-color: var(--bg-card) !important;
+}
+
+.bg-primary {
+  background-color: var(--bg-primary) !important;
+}
+
+.text-primary {
+  color: var(--fg-primary) !important;
+}
