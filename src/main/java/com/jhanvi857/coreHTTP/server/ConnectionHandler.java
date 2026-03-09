@@ -4,9 +4,9 @@ import com.jhanvi857.coreHTTP.protocol.HttpParser;
 import com.jhanvi857.coreHTTP.protocol.HttpRequest;
 import com.jhanvi857.coreHTTP.exception.HttpParseException;
 
-import java.io.InputStream;
+// import java.io.InputStream;
 import java.net.SocketTimeoutException;
-import java.net.Socket;
+// import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
@@ -28,11 +28,12 @@ public class ConnectionHandler implements Runnable {
     @Override
     public void run() {
         try {
-            // use java.nio.channels.Channels to bridge the NIO channel to a standard stream
+            // using java.nio.channels.Channels to bridge the NIO channel to a standard
+            // stream
             java.io.InputStream in = java.nio.channels.Channels.newInputStream(channel);
             HttpParser parser = new HttpParser();
 
-            // handles multiple requests on the same connection.
+            // handle multiple requests on the same connection.
             boolean keepAlive = true;
             while (keepAlive && channel.isOpen()) {
                 HttpRequest request;
@@ -57,7 +58,11 @@ public class ConnectionHandler implements Runnable {
                 com.jhanvi857.coreHTTP.protocol.HttpResponse response;
 
                 if (handler != null) {
-                    response = handler.handle(request);
+                    try {
+                        response = handler.handle(request);
+                    } catch (Exception e) {
+                        response = com.jhanvi857.coreHTTP.exception.GlobalExceptionHandler.handle(e);
+                    }
                 } else {
                     response = new com.jhanvi857.coreHTTP.protocol.HttpResponse(
                             com.jhanvi857.coreHTTP.protocol.HttpStatus.NOT_FOUND,
@@ -91,7 +96,7 @@ public class ConnectionHandler implements Runnable {
             // If want to keep the connection, register it back with the Selector for READ
             // events.
             // If not,close it.
-            if (key.isValid() && channel.isOpen()) {
+            if (key != null && key.isValid() && channel.isOpen()) {
                 key.interestOps(SelectionKey.OP_READ);
                 key.selector().wakeup();
             } else {

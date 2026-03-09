@@ -14,8 +14,13 @@ public class HttpRequest {
         this.path = path;
         this.method = method;
         this.version = version;
-        this.headers = headers;
+        // Ensure mutable headers
+        this.headers = headers != null ? new java.util.HashMap<>(headers) : new java.util.HashMap<>();
         this.body = body != null ? body : new byte[0];
+    }
+
+    public void addHeader(String key, String value) {
+        this.headers.put(key, value);
     }
 
     public String getMethod() {
