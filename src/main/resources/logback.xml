@@ -9,6 +9,6 @@
         <appender-ref ref="CONSOLE" />
     </root>
 
-    <!-- Specific log levels for our packages -->
-    <logger name="com.jhanvi857.coreHTTP" level="DEBUG" />
+    <!-- Set to DEBUG for development troubleshooting -->
+    <logger name="com.jhanvi857.coreHTTP" level="INFO" />
 </configuration>

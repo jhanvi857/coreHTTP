@@ -17,6 +17,7 @@ public final class HttpParser {
     private static final int MAX_HEADER_SIZE_BYTES = 8192;
     private static final int MAX_CHUNK_LINE_BYTES = 1024;
     private static final int MAX_CHUNKED_BODY_BYTES = 10 * 1024 * 1024;
+    private static final int MAX_BODY_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB limit for Content-Length bodies
 
     public HttpRequest parse(InputStream in) throws IOException, HttpParseException {
         logger.debug("Starting request parsing...");
@@ -91,6 +92,10 @@ public final class HttpParser {
                 int contentLength = Integer.parseInt(contentLengthValue);
                 if (contentLength < 0) {
                     throw new HttpParseException("Negative Content-Length");
+                }
+                if (contentLength > MAX_BODY_SIZE_BYTES) {
+                    throw new HttpParseException(
+                            "Content-Length exceeds maximum allowed size of " + MAX_BODY_SIZE_BYTES);
                 }
                 if (contentLength > 0) {
                     body = readBody(in, contentLength);

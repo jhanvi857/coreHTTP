@@ -3,11 +3,15 @@ package com.jhanvi857.coreHTTP.protocol;
 public enum HttpStatus {
     // status codes.
     OK(200, "OK"),
+    CREATED(201, "Created"),
     BAD_REQUEST(400, "Bad Request"),
-    REQUEST_TIMEOUT(408, "Request Timeout"),
+    UNAUTHORIZED(401, "Unauthorized"),
+    FORBIDDEN(403, "Forbidden"),
     NOT_FOUND(404, "Not Found"),
-    SERVICE_UNAVAILABLE(503, "Service Unavailable"),
-    INTERNAL_SERVER_ERROR(500, "Internal Server Error");
+    REQUEST_TIMEOUT(408, "Request Timeout"),
+    TOO_MANY_REQUESTS(429, "Too Many Requests"),
+    INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
+    SERVICE_UNAVAILABLE(503, "Service Unavailable");
 
     private final int code;
     private final String message;

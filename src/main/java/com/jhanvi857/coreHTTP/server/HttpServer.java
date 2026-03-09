@@ -105,23 +105,8 @@ public class HttpServer {
                         continue;
 
                     if (key.isAcceptable()) {
-                        // Accept new client
-                        acceptNewClient(selector, serverChannel);
-                    } else if (key.isReadable()) {
-                        // An existing client has sent us req.
-                        // stop watching this client temporarily so worker thread can handle it without
-                        // selector firing again.
-                        key.interestOps(0);
-
-                        SocketChannel clientChannel = (SocketChannel) key.channel();
-
-                        // Hand the work to our pool of background threads
-                        try {
-                            threadPool.execute(new ConnectionHandler(clientChannel, router, key));
-                        } catch (RejectedExecutionException rejected) {
-                            logger.warn("Server busy! Rejecting connection.");
-                            clientChannel.close();
-                        }
+                        // Accept and hand off directly to a worker thread.
+                        acceptNewClient(serverChannel, router);
                     }
                 }
             }
@@ -136,23 +121,45 @@ public class HttpServer {
         }
     }
 
-    private void acceptNewClient(Selector selector, ServerSocketChannel serverChannel) throws IOException {
+    private void acceptNewClient(ServerSocketChannel serverChannel, com.jhanvi857.coreHTTP.routing.Router router)
+            throws IOException {
         SocketChannel clientChannel = serverChannel.accept();
-        // Client must be also non-blocking
-        clientChannel.configureBlocking(false);
+        if (clientChannel == null) {
+            return;
+        }
 
-        // Start watching this client for when data is ready to read
-        clientChannel.register(selector, SelectionKey.OP_READ);
-        logger.info("Accepted NIO connection from {}", clientChannel.getRemoteAddress());
+        // Worker threads parse request bytes using InputStream semantics.
+        // Keep accepted channels in blocking mode to prevent
+        // IllegalBlockingModeException.
+        clientChannel.configureBlocking(true);
+        clientChannel.socket().setSoTimeout(socketReadTimeoutMs);
+
+        logger.info("Accepted connection from {}", clientChannel.getRemoteAddress());
+
+        try {
+            threadPool.execute(new ConnectionHandler(clientChannel, router, null));
+        } catch (RejectedExecutionException rejected) {
+            logger.warn("Server busy! Rejecting connection.");
+            sendServiceUnavailable(clientChannel);
+        }
     }
 
     public static void main(String[] args) {
         com.jhanvi857.coreHTTP.routing.Router router = new com.jhanvi857.coreHTTP.routing.Router();
 
-        // Reusable static root selection:
-        // 1. JVM property: -Dcorehttp.staticDir=...
-        // 2. env var: COREHTTP_STATIC_DIR
-        // 3. fallback to bundled demo public folder
+        // 1. Global Middleware
+        router.use(new com.jhanvi857.coreHTTP.middleware.LoggerMiddleware());
+        // configurable cors origin. Default to localhost for dev safety.
+        String corsOrigin = System.getenv("COREHTTP_CORS_ORIGIN");
+        if (corsOrigin == null || corsOrigin.isBlank()) {
+            corsOrigin = "http://localhost:3000";
+        }
+        router.use(new com.jhanvi857.coreHTTP.middleware.CorsMiddleware(corsOrigin));
+        router.use(new com.jhanvi857.coreHTTP.middleware.MetricsMiddleware());
+        // Simple Rate Limit: 100 requests per 10 seconds locally
+        router.use(new com.jhanvi857.coreHTTP.middleware.RateLimitMiddleware(100, 10000));
+
+        // 2. Resolving static assets
         String staticDir = System.getProperty("corehttp.staticDir");
         if (staticDir == null || staticDir.isBlank()) {
             staticDir = System.getenv("COREHTTP_STATIC_DIR");
@@ -162,13 +169,31 @@ public class HttpServer {
         }
         logger.info("Serving static assets from: {}", staticDir);
 
-        // static file handler for frontend assets
-        router.register("/", new StaticFileHandler(staticDir));
-        router.register("/_health", request -> new com.jhanvi857.coreHTTP.protocol.HttpResponse(
-                com.jhanvi857.coreHTTP.protocol.HttpStatus.OK, "{\"status\": \"UP\"}"));
+        // 3. Static File Routes
+        router.get("/", new StaticFileHandler(staticDir));
 
-        router.register("/hello", request -> new com.jhanvi857.coreHTTP.protocol.HttpResponse(
-                com.jhanvi857.coreHTTP.protocol.HttpStatus.OK, "Hello from Router!"));
+        // 4. Observability Routes
+        router.get("/_health", new com.jhanvi857.coreHTTP.observability.HealthCheckHandler());
+        router.get("/metrics", request -> new com.jhanvi857.coreHTTP.protocol.HttpResponse(
+                com.jhanvi857.coreHTTP.protocol.HttpStatus.OK,
+                com.jhanvi857.coreHTTP.middleware.MetricsMiddleware.getMetricsReport()));
+
+        // 5. App Business Routes
+        com.jhanvi857.coreHTTP.app.controller.TaskController taskController = new com.jhanvi857.coreHTTP.app.controller.TaskController();
+        router.get("/api/tasks", taskController::list);
+        router.post("/api/tasks", taskController::create);
+        router.get("/api/tasks/", taskController::get); // Longest prefix will match /api/tasks/{id}
+        router.delete("/api/tasks/", taskController::delete);
+
+        // 6. Auth Demo Endpoint
+        router.get("/api/secure", req -> {
+            String user = req.getHeaders().getOrDefault("X-Auth-User", "anonymous");
+            String safeBody = com.jhanvi857.coreHTTP.util.JsonUtils
+                    .toJson(java.util.Map.of("message", "Hello, " + user));
+            HttpResponse resp = new HttpResponse(HttpStatus.OK, safeBody);
+            resp.addHeader("Content-Type", "application/json");
+            return resp;
+        });
 
         new HttpServer(8080).start(router);
     }
