@@ -1,279 +1,132 @@
-# CoreHTTP
+# CoreHTTP Micro-Framework
 
-Custom HTTP server built from scratch in Java 17 using NIO, with routing, middleware, static file serving, optional PostgreSQL-backed CRUD APIs, and observability endpoints.
+CoreHTTP is a high-performance, modular micro-framework for Java 17 designed for building scalable, event-driven web applications. It leverages Java Non-blocking I/O (NIO) to provide a lightweight alternative to traditional thread-per-connection servlet containers, offering a fluent API inspired by modern frameworks like Express.js and Javalin.
 
-## Table of Contents
+## Architectural Overview
 
-- [Project Summary](#project-summary)
-- [Core Capabilities](#core-capabilities)
-- [Architecture](#architecture)
-- [Request Flow](#request-flow)
-- [Deployment Topology](#deployment-topology)
-- [Repository Structure](#repository-structure)
-- [Quick Start](#quick-start)
-- [API Reference](#api-reference)
-- [Configuration](#configuration)
-- [Operational Notes](#operational-notes)
-- [Current Limitations](#current-limitations)
-- [Roadmap](#roadmap)
+The framework is built on a non-blocking architecture that separates connection management from request processing. This allows a single selector thread to manage thousands of concurrent connections efficiently.
 
-## Project Summary
-
-CoreHTTP is a custom Java HTTP server built for understanding server internals while supporting realistic backend requirements.
-
-The codebase combines:
-
-- A non-blocking accept loop using Java NIO (`Selector` + `ServerSocketChannel`).
-- Worker-thread request processing via a bounded `ThreadPoolExecutor`.
-- A routing layer with composable middleware (function wrapping pattern).
-- Static file delivery with path traversal protection and zero-copy file transfer (`FileChannel.transferTo`).
-- Optional PostgreSQL-backed task APIs using HikariCP connection pooling (disabled by default).
-- Health and metrics endpoints for operational visibility.
-
-## Core Capabilities
-
-- HTTP/1.1 request parsing with `Content-Length` and `Transfer-Encoding: chunked` support.
-- Header size limit (8 KB) and body size limit (10 MB) to prevent oversized payloads.
-- Validation for malformed request framing (negative lengths, dual Content-Length + chunked, bad CRLF boundaries).
-- Path-normalized static file resolution with traversal detection (`normalize()` + `startsWith()` guard).
-- Global middleware chain: `Logger`, `CORS`, `Metrics`, `RateLimit`.
-- Longest-prefix route matching for patterns like `/api/tasks/{id}`.
-- Docker Compose stack for app + PostgreSQL (requires `DB_PASS` env var).
-
-## Architecture
-
-Each package has a focused responsibility and clear integration points.
+### System Architecture
 
 ```mermaid
-flowchart LR
-    client[HTTP Client or Browser]
-    server[HttpServer\nNIO Selector + ThreadPool]
-    handler[ConnectionHandler]
-    parser[HttpParser]
-    router[Router]
-    middleware[Global Middleware Chain\nLogger -> CORS -> Metrics -> RateLimit]
-    endpoints[Route Handlers\nStaticFileHandler\nTaskController\nHealthCheckHandler]
-    protocol[HttpResponse Builder]
-    db[(PostgreSQL\nvia HikariCP)]
-
-    client --> server
-    server --> handler
-    handler --> parser
-    handler --> router
-    router --> middleware
-    middleware --> endpoints
-    endpoints --> db
-    endpoints --> protocol
-    protocol --> client
+graph TD
+    Client[HTTP Client] -->|TCP/IP| Selector[NIO Selector Loop]
+    Selector -->|Accept/Read| EventManager[Event Manager]
+    EventManager -->|Queue Task| WorkerPool[Fixed Thread Pool]
+    
+    subgraph Execution Pipeline
+        WorkerPool --> Parser[HTTP Protocol Parser]
+        Parser --> Router[Regex Routing Engine]
+        Router --> MiddlewareChain[Global & Scoped Middleware]
+        MiddlewareChain --> Handler[Route Handler / Plugin]
+    end
+    
+    Handler -->|Zero-Copy| FileSystem[Static Assets]
+    Handler -->|JDBC| Database[(PostgreSQL)]
+    
+    Handler --> Context[HttpContext]
+    Context --> Responder[HTTP Response Writer]
+    Responder -->|Write| Client
 ```
 
-### Layer Responsibilities
+### Request Processing Lifecycle
 
-- `server`: connection acceptance, selector lifecycle, worker pool, overload control.
-- `protocol`: HTTP model objects, parser, status and response writing.
-- `routing`: route registration and request-to-handler resolution.
-- `middleware`: cross-cutting request processing (logging, CORS, metrics, rate limiting).
-- `app`: business logic (`TaskController`, `TaskRepository`, `Task` model).
-- `db`: datasource bootstrap and connection acquisition via HikariCP.
-- `observability`: runtime health and metrics endpoints.
-- `auth`: JWT token generation/validation and BCrypt password hashing (utilities available, not wired into routes yet).
-- `exception`: parse and handler error types used by the protocol and connection layers.
-
-## Request Flow
+The lifecycle of a request in CoreHTTP follows a deterministic path through the middleware pipeline and routing engine.
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant S as HttpServer
-    participant W as ConnectionHandler
-    participant P as HttpParser
+    participant S as NIO Selector
+    participant W as Worker Thread
     participant R as Router
-    participant M as Middleware Chain
-    participant H as Route Handler
-    participant D as PostgreSQL
+    participant M as Middleware
+    participant H as Handler
 
-    C->>S: TCP connect + HTTP bytes
-    S->>W: submit socket channel to worker pool
-    W->>P: parse request line, headers, body
-    P-->>W: HttpRequest
-    W->>R: resolve(method, path)
-    R-->>W: wrapped handler
-    W->>M: process request
-    M->>H: invoke endpoint logic
-    alt DB-backed route
-        H->>D: SQL query or command
-        D-->>H: result set or status
-    end
-    H-->>W: HttpResponse
-    W-->>C: write status line, headers, body
+    C->>S: TCP Payload
+    S->>W: Dispatch Connection
+    W->>W: Parse HTTP Request
+    W->>R: Resolve Route (Regex Match)
+    R->>M: Execute Middleware Chain
+    M->>H: Invoke Business Logic
+    H->>H: Populate HttpContext
+    W->>C: Transmit Buffered Response
 ```
 
-## Deployment Topology
+## Core Framework Features
 
-For containerized execution, `docker-compose.yml` defines the following topology:
+### Non-blocking I/O Engine
+The core transport layer utilizes `java.nio` to implement an event-driven loop. By using a single `Selector` for connection acceptance and I/O readiness, the system avoids the memory overhead associated with massive thread counts.
 
-```mermaid
-flowchart TD
-    subgraph Host Machine
-        subgraph Docker Network corehttp-net
-            APP[coreHTTP app container\nport 8080]
-            DB[(PostgreSQL 15\nport 5432)]
-        end
-        USER[Developer or Test Client]
-    end
+### Advanced Regex Routing
+The routing engine supports dynamic path parameters and complex patterns.
+- Named Parameters: `/api/resources/:id`
+- Wildcard Support: `/assets/*`
+- Path-based Grouping: Prefixed groups with scoped middleware.
 
-    USER -->|HTTP| APP
-    APP -->|JDBC| DB
-```
+### Zero-Copy Static File Serving
+For high-performance asset delivery, the framework utilizes `FileChannel.transferTo()`. This allows the operating system to transfer data directly from the file system cache to the network buffer, bypassing the Java heap entirely and reducing CPU cycles.
+
+### Unified HttpContext Abstraction
+The `HttpContext` provides a unified interface for request data extraction and response generation.
+- Type-safe JSON deserialization via `ctx.body(Class<T>)`.
+- Fluent response building: `ctx.status(201).json(data)`.
+- Path parameter retrieval via `ctx.pathParam(name)`.
 
 ## Repository Structure
 
+The project is organized as a Multi-Module Maven repository to ensure strict isolation between the framework core and consumer applications.
+
 ```text
-src/main/java/com/jhanvi857/coreHTTP/
-  app/
-    controller/      TaskController (CRUD handlers)
-    model/           Task data class
-    repository/      TaskRepository (SQL via PreparedStatement)
-  auth/              JwtProvider, PasswordHasher (utility classes, not yet route-integrated)
-  db/                DatabaseManager (HikariCP bootstrap)
-  exception/         HttpParseException, GlobalExceptionHandler
-  middleware/        Logger, CORS, Metrics, RateLimit middleware
-  observability/     HealthCheckHandler
-  protocol/          HttpParser, HttpRequest, HttpResponse, HttpStatus
-  routing/           Router, RouteHandler interface
-  server/            HttpServer (NIO), ConnectionHandler, StaticFileHandler, FileHttpResponse
-  util/              JsonUtils (Jackson wrapper)
-src/main/resources/public/    Static web assets
-src/test/                     JUnit 5 tests for HttpParser
-scripts/                      run.ps1, run.sh convenience scripts
+.
+├── corehttp-framework/       # Reusable framework logic (NIO, Parser, Router)
+│   ├── protocol/             # HTTP/1.1 Model and Parsing
+│   ├── routing/              # Regex Engine and Context logic
+│   ├── server/               # NIO Selector and Connection Management
+│   └── plugin/               # Official Extension Points
+└── task-planner-app/         # Reference Implementation
+    ├── controller/           # REST Handlers
+    └── repository/           # PostgreSQL Integration
 ```
 
-## Quick Start
+## Deployment and Usage
 
 ### Prerequisites
+- Java Development Kit (JDK) 17 or higher
+- Apache Maven 3.9+
 
-- JDK 17+
-- Maven 3.9+
-- PostgreSQL 15+ (only if using task APIs, disabled by default)
-
-### Option 1: Run via Maven (recommended)
-
-```bash
-mvn clean compile
-mvn exec:java -Dexec.mainClass=com.jhanvi857.coreHTTP.server.HttpServer
-```
-
-### Option 2: Convenience scripts
-
-Windows PowerShell:
-
-```powershell
-.\scripts\run.ps1
-```
-
-Linux or macOS Bash:
+### Installation
+To include the framework in a local environment:
 
 ```bash
-./scripts/run.sh
+cd corehttp-framework
+mvn clean install
 ```
 
-### Option 3: Docker Compose
-
-Requires setting `DB_PASS`:
+### Reference Implementation
+A sample CRUD application utilizing the framework is available in the `task-planner-app` directory.
 
 ```bash
-DB_PASS=yourpassword docker-compose up --build
+cd task-planner-app
+mvn compile exec:java -Dexec.mainClass=com.jhanvi857.taskplanner.DemoApplication
 ```
 
-### Smoke Tests
+## Security and Resilience
 
-```bash
-curl -i http://localhost:8080/
-curl -i http://localhost:8080/_health
-curl -i http://localhost:8080/metrics
-```
+- **Path Traversal Protection**: Resolution logic validates canonical paths against the configured base directory.
+- **Payload Constraints**: Configurable limits on header size (8KB) and body size (10MB) to mitigate buffer-based attacks.
+- **Resource Management**: Bounded thread pools and request queues prevent resource exhaustion under denial-of-service conditions.
+- **Rate Limiting**: Sliding window implementation for per-IP request throttling.
 
-## API Reference
+## Technical Specifications
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/` | Serves static content from configured public directory. |
-| `GET` | `/_health` | Returns server and database health summary (JSON). |
-| `GET` | `/metrics` | Returns Prometheus-style counters and latency gauges. |
-| `GET` | `/api/tasks` | List all tasks (requires DB enabled). |
-| `POST` | `/api/tasks` | Create a task from JSON body (requires DB enabled). |
-| `GET` | `/api/tasks/{id}` | Fetch task by id (requires DB enabled). |
-| `DELETE` | `/api/tasks/{id}` | Delete task by id (requires DB enabled). |
-| `GET` | `/api/secure` | Demo endpoint that reads `X-Auth-User` header. No authentication is enforced. |
+| Component | Implementation Detail |
+|:---|:---|
+| Protocol | HTTP/1.1 (Persistent Connections) |
+| I/O Model | Java Non-blocking I/O (NIO) |
+| Concurrency | Fixed ThreadPool Executor |
+| Routing | Regex-based Pattern Matching |
+| Serialization | Jackson (JSON) |
+| Logging | SLF4J with Logback |
 
-Example create request (with database enabled):
-
-```bash
-curl -i -X POST http://localhost:8080/api/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Write architecture docs","completed":false}'
-```
-
-## Configuration
-
-CoreHTTP reads JVM properties first, then environment variables.
-
-### Server Runtime
-
-| Purpose | JVM Property | Environment Variable | Default |
-|---|---|---|---|
-| Static file root | `corehttp.staticDir` | `COREHTTP_STATIC_DIR` | Auto-detected candidate path |
-| Worker threads | `corehttp.threads` | `COREHTTP_THREADS` | `10` |
-| Queue capacity | `corehttp.queueCapacity` | `COREHTTP_QUEUE_CAPACITY` | `100` |
-| Socket read timeout (ms) | `corehttp.socketTimeoutMs` | `COREHTTP_SOCKET_TIMEOUT_MS` | `15000` |
-| CORS allowed origin | — | `COREHTTP_CORS_ORIGIN` | `http://localhost:3000` |
-
-### Database Runtime
-
-| Variable | Default | Description |
-|---|---|---|
-| `COREHTTP_ENABLE_DB` | `false` | Set to `true` to enable PostgreSQL features (task CRUD, health check DB probe). |
-| `JDBC_URL` | `jdbc:postgresql://localhost:5432/corehttp` | PostgreSQL JDBC URL. |
-| `DB_USER` | `postgres` | Database username. |
-| `DB_PASS` | *(required when DB enabled)* | Database password. No default — must be set explicitly. |
-
-### Auth (not yet route-integrated)
-
-| Variable | Default | Description |
-|---|---|---|
-| `JWT_SECRET` | *(required for JWT ops)* | HMAC-SHA signing key, minimum 32 characters. |
-
-Example launch with explicit runtime settings:
-
-```bash
-mvn exec:java \
-  -Dexec.mainClass=com.jhanvi857.coreHTTP.server.HttpServer \
-  -Dcorehttp.staticDir="C:/apps/frontend/dist" \
-  -Dcorehttp.threads=20 \
-  -Dcorehttp.queueCapacity=200 \
-  -Dcorehttp.socketTimeoutMs=15000
-```
-
-## Operational Notes
-
-- **Overload control**: bounded worker queue rejects with HTTP 503 under burst traffic.
-- **Parser safety**: rejects ambiguous framing, oversized headers (8 KB), and oversized bodies (10 MB).
-- **Metrics model**: request totals, error totals, and per-path average latency with path normalization.
-- **Health behavior**: returns `DEGRADED` status when database connectivity fails; reports `DISABLED` when DB is off.
-- **Rate limiting**: per-client (via `X-Forwarded-For`) with configurable window and request cap.
-- **Zero-copy**: static files are transferred via `FileChannel.transferTo()` to avoid heap copies.
-
-## Current Limitations
-
-- **Auth is not enforced**. `JwtProvider` and `AuthMiddleware` exist as utility classes but are not applied to any route. The `/api/secure` endpoint is a demo stub without real protection.
-- **No TLS**. The server accepts plaintext HTTP only. Use a reverse proxy (nginx, Caddy) for HTTPS in production.
-- **Single-host rate limiting**. The rate limiter uses in-process memory and does not share state across server instances.
-- **No persistent sessions**. There is no session or cookie management built in.
-
-## Roadmap
-
-- Route-level authentication middleware integration.
-- Improved route templating with named path parameters.
-- Expanded test coverage for protocol edge cases and integration tests.
-- Maven shade/assembly plugin for fat JAR Docker builds.
-- Optional TLS termination support.
+---
+Documentation compiled for High-Performance Systems Engineering standards.
