@@ -6,21 +6,21 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JDBC_URL=jdbc:postgresql://db:5432/corehttp
+      - JDBC_URL=jdbc:postgresql://db:5432/nioflow
       - DB_USER=postgres
       - DB_PASS=${DB_PASS:-changeme}
-      - COREHTTP_ENABLE_DB=true
-      - COREHTTP_CORS_ORIGIN=${COREHTTP_CORS_ORIGIN:-*}
+      - NIOFLOW_ENABLE_DB=true
+      - NIOFLOW_CORS_ORIGIN=${NIOFLOW_CORS_ORIGIN:-*}
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - corehttp-net
+      - nioflow-net
 
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=corehttp
+      - POSTGRES_DB=nioflow
       - POSTGRES_PASSWORD=${DB_PASS:-changeme}
     ports:
       - "5432:5432"
@@ -33,10 +33,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - corehttp-net
+      - nioflow-net
 
 networks:
-  corehttp-net:
+  nioflow-net:
     driver: bridge
 
 volumes:

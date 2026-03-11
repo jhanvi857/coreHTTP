@@ -1,4 +1,4 @@
-# CoreHTTP Portable Maven Wrapper
+# NioFlow Portable Maven Wrapper
 # Use this to run Maven without installing it on your system!
 
 $MavenVersion = "3.9.6"

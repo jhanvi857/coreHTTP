@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 -- Initial data
 INSERT INTO tasks (title, description, completed) VALUES 
-('Launch coreHTTP', 'Finalize the NIO core and documentation.', true),
+('Launch NioFlow', 'Finalize the NIO core and documentation.', true),
 ('Implement CRUD', 'Add SQL persistence and task controller.', false),
 ('Add Auth', 'Integrate JWT and middleware security.', false);
