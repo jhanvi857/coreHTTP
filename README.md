@@ -2,7 +2,7 @@
 
 **A lightweight, production-grade HTTP micro-framework for Java 17.**
 
-NioFlow is built on Java Non-Blocking I/O (NIO) for high-concurrency connection handling, designed as an explicit, low-ceremony alternative to traditional servlet containers. It prioritizes developer clarity, predictable routing, and a composable middleware model — without the overhead of annotation scanning or hidden reflection.
+NioFlow is built on Java Non-Blocking I/O (NIO) for high-concurrency connection handling, designed as an explicit, low-ceremony alternative to traditional servlet containers. It prioritizes developer clarity, predictable routing, and a composable middleware model, without the overhead of annotation scanning or hidden reflection.
 
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/projects/jdk/17/)
 [![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
@@ -31,12 +31,12 @@ Most Java HTTP frameworks are either too heavyweight (Spring Boot) or too opaque
 
 | Concern | NioFlow's Approach |
 |:---|:---|
-| **Connection handling** | NIO Selector loop — no idle threads per connection |
-| **Routing** | Explicit, programmatic — no annotation scanning |
-| **Middleware** | Composable chain — global and route-scoped |
-| **Security** | Native TLS via `SSLEngine`, no reverse proxy required |
+| **Connection handling** | NIO Selector loop ensuring no idle threads per connection |
+| **Routing** | Explicit, programmatic configuration without annotation scanning |
+| **Middleware** | Composable chain supporting global and route-scoped execution |
+| **Security** | Native TLS via `SSLEngine` without requiring a reverse proxy |
 | **DB concurrency** | Async JDBC offload via dedicated executor pool |
-| **File serving** | Zero-copy via `FileChannel.transferTo()` |
+| **File serving** | Zero-copy transfer via `FileChannel.transferTo()` |
 
 ---
 
@@ -74,7 +74,7 @@ app.group("/api/admin", group -> {
     group.delete("/tasks/:id", adminController::deleteTask);
 });
 
-// Global error handler — prevents stack trace leaks
+// Global error handler to prevent stack trace leaks
 app.onError((err, ctx) -> {
     logger.error("Unhandled exception", err);
     ctx.status(500).json(new ErrorResponse("Internal Server Error"));
@@ -98,7 +98,7 @@ Runtime.getRuntime().addShutdownHook(
 
 ### NIO Connection Handling
 
-The transport layer uses a single `Selector` thread exclusively for connection acceptance. Accepted connections are dispatched to a bounded worker thread pool for request parsing and processing. This model decouples connection tracking from I/O execution — idle connections consume no threads.
+The transport layer uses a single `Selector` thread exclusively for connection acceptance. Accepted connections are dispatched to a bounded worker thread pool for request parsing and processing. This model decouples connection tracking from I/O execution, meaning that idle connections consume no threads.
 
 ### HTTPS / TLS (Native)
 
@@ -121,16 +121,16 @@ app.group("/api/v2", group -> { ... });                // Prefixed group
 ```
 
 Supported pattern types:
-- **Named Parameters** — `/api/resources/:id` → `ctx.pathParam("id")`
-- **Wildcard Segments** — `/assets/*`
-- **Path Groups** — Scoped middleware and shared prefix via `app.group()`
+- **Named Parameters**: `/api/resources/:id` -> `ctx.pathParam("id")`
+- **Wildcard Segments**: `/assets/*`
+- **Path Groups**: Scoped middleware and shared prefix via `app.group()`
 
 ### Async Database Offload
 
 JDBC is inherently synchronous. Executing database queries directly on worker threads blocks those threads for the duration of each query, limiting concurrency under load. NioFlow addresses this by offloading all JDBC operations to a dedicated secondary executor pool inside the repository layer.
 
 ```java
-// Worker thread returns immediately — DB work runs on dbExecutor
+// Worker thread returns immediately; DB work runs on dbExecutor
 public CompletableFuture<Task> findById(long id) {
     return CompletableFuture.supplyAsync(() -> {
         // JDBC query executes here, on a separate pool
@@ -165,10 +165,10 @@ Middleware is applied in declaration order. Global middleware applies to every r
 
 ```java
 app.use(new LoggerMiddleware());                 // Global
-app.use(new CorsMiddleware("*"));               // Global
+app.use(new CorsMiddleware("*"));                // Global
 
 app.group("/api/admin", group -> {
-    group.use(new JwtAuthMiddleware());         // Scoped to /api/admin/*
+    group.use(new JwtAuthMiddleware());          // Scoped to /api/admin/*
     group.get("/stats", adminController::stats);
 });
 ```
@@ -199,43 +199,43 @@ This ensures zero dropped requests during rolling deployments or container resta
 
 ### System Overview
 
-NioFlow uses a hybrid non-blocking / blocking architecture. Connection acceptance is non-blocking (NIO Selector). Request processing is blocking within a bounded worker pool.
+NioFlow uses a hybrid non-blocking and blocking architecture. Connection acceptance is non-blocking (NIO Selector). Request processing is blocking within a bounded worker pool.
 
-```
+```text
 HTTP Client
     │
     ▼  TCP/IP
-NIO Selector Loop          ← Single thread, accepts all connections
+NIO Selector Loop          <- Single thread, accepts all connections
     │
     ▼  Dispatch SocketChannel
 Event Manager
     │
     ▼  Queue Task
-Fixed Worker Thread Pool   ← Bounded; only active I/O threads
+Fixed Worker Thread Pool   <- Bounded; only active I/O threads
     │
     ├── HTTP Protocol Parser
     ├── Regex Routing Engine
-    ├── Middleware Chain (Global → Scoped)
+    ├── Middleware Chain (Global and Scoped)
     └── Route Handler
             │
-            ├── FileChannel.transferTo()  → Static Assets (zero-copy)
-            ├── CompletableFuture/JDBC    → PostgreSQL (async offload)
-            └── HttpContext → Response Writer → Client
+            ├── FileChannel.transferTo()  <- Static Assets (zero-copy)
+            ├── CompletableFuture/JDBC    <- PostgreSQL (async offload)
+            └── HttpContext -> Response Writer -> Client
 ```
 
 ### Request Lifecycle
 
-```
+```text
 Client TCP Payload
-    → NIO Selector accepts connection
-    → Worker Thread parses HTTP/1.1 request
-    → Router resolves matching pattern (regex)
-    → Global middleware executes in order
-    → Scoped middleware executes (if applicable)
-    → Route handler invoked
-    → HttpContext populated
-    → Response serialized and transmitted
-    → Connection kept alive (persistent)
+    -> NIO Selector accepts connection
+    -> Worker Thread parses HTTP/1.1 request
+    -> Router resolves matching pattern (regex)
+    -> Global middleware executes in order
+    -> Scoped middleware executes (if applicable)
+    -> Route handler invoked
+    -> HttpContext populated
+    -> Response serialized and transmitted
+    -> Connection kept alive (persistent)
 ```
 
 ---
@@ -244,13 +244,13 @@ Client TCP Payload
 
 | Control | Implementation |
 |:---|:---|
-| **TLS/HTTPS** | Native `SSLContext` + `SSLSocketFactory` — no reverse proxy required |
+| **TLS/HTTPS** | Native `SSLContext` with `SSLSocketFactory` avoiding a reverse proxy requirement |
 | **Path Traversal** | Canonical path validation against configured base directory |
-| **Header Size Limit** | 8KB maximum — rejects oversized headers |
-| **Body Size Limit** | 10MB maximum — configurable |
+| **Header Size Limit** | 8KB maximum to reject oversized headers |
+| **Body Size Limit** | 10MB maximum, customizable via configuration |
 | **Rate Limiting** | Per-IP sliding window via `RateLimitMiddleware(maxRequests, windowDuration)` |
 | **Resource Exhaustion** | Bounded thread pools and request queues cap resource usage under DoS conditions |
-| **Error Leakage** | Global `onError` handler sanitizes responses — no stack traces reach the client |
+| **Error Leakage** | Global `onError` handler sanitizes responses preventing stack traces from reaching the client |
 
 ---
 
@@ -269,7 +269,7 @@ Uses a sliding window algorithm for per-IP tracking.
 
 ```java
 app.use(new CorsMiddleware("https://yourdomain.com"));  // Specific origin
-app.use(new CorsMiddleware("*"));                       // Open (development only)
+app.use(new CorsMiddleware("*"));                       // Open configuration (development only)
 ```
 
 ### Payload Limits
@@ -312,15 +312,15 @@ mvn compile exec:java -Dexec.mainClass=com.jhanvi857.taskplanner.DemoApplication
 - [ ] Register `drainAndStop()` in a `ShutdownHook`
 - [ ] Configure `RateLimitMiddleware` for public-facing routes
 - [ ] Set appropriate thread pool sizes relative to DB connection pool
-- [ ] Verify body/header size limits match your payload requirements
+- [ ] Verify body and header size limits match your payload requirements
 
 ---
 
 ## Repository Structure
 
-```
+```text
 .
-├── nioflow-framework/           # Framework core — publishable as JAR
+├── nioflow-framework/           # Framework core publishable as JAR
 │   ├── protocol/                # HTTP/1.1 model and request parsing
 │   ├── routing/                 # Regex routing engine and HttpContext
 │   ├── server/                  # NIO Selector, TLS, connection management
@@ -340,14 +340,14 @@ The framework module (`nioflow-framework`) has no dependency on the application 
 | Component | Detail |
 |:---|:---|
 | Protocol | HTTP/1.1 with persistent connections |
-| I/O Model | Java NIO (Non-Blocking I/O) — `java.nio` |
-| TLS | Native `SSLContext` / `SSLSocketFactory` |
-| Concurrency | Fixed `ThreadPoolExecutor` (worker) + secondary DB executor |
+| I/O Model | Java NIO (Non-Blocking I/O) using `java.nio` |
+| TLS | Native `SSLContext` and `SSLSocketFactory` |
+| Concurrency | Fixed `ThreadPoolExecutor` (worker) with secondary DB executor |
 | DB Async | `CompletableFuture.supplyAsync()` with dedicated pool |
 | Routing | Regex-based pattern matching |
 | File Serving | `FileChannel.transferTo()` (zero-copy) |
 | Serialization | Jackson |
-| Logging | SLF4J + Logback |
+| Logging | SLF4J with Logback |
 | Java Version | 17+ |
 | Build Tool | Maven 3.9+ |
 
