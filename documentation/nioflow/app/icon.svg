@@ -1,0 +1,6 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="512" height="512" rx="100" fill="#111111" />
+  <!-- Technical Monospace "N" with clean geometry -->
+  <path d="M168 128 L168 384 L200 384 L200 215 L310 384 L344 384 L344 128 L312 128 L312 297 L202 128 Z" fill="#BBBBBB" />
+</svg>

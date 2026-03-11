@@ -301,7 +301,7 @@ Responsibilities:
 
 README must explain:
 
-- What coreHTTP is
+- What NioFlow is
 
 - Why I built it
 

@@ -8,5 +8,5 @@ cd "$PROJECT_ROOT"
 echo "Building project with Maven..."
 mvn clean compile -q
 
-echo "Starting CoreHTTP Server..."
-mvn exec:java -Dexec.mainClass="com.jhanvi857.coreHTTP.server.HttpServer"
+echo "Starting Task Planner App (Demo)..."
+mvn -pl task-planner-app exec:java -Dexec.mainClass="com.jhanvi857.taskplanner.DemoApplication"

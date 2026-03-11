@@ -1,10 +1,50 @@
-# CoreHTTP Micro-Framework
+# NioFlow Micro-Framework
 
-CoreHTTP is a high-performance, modular micro-framework for Java 17 designed for building scalable, event-driven web applications. It leverages Java Non-blocking I/O (NIO) to provide a lightweight alternative to traditional thread-per-connection servlet containers, offering a fluent API inspired by modern frameworks like Express.js and Javalin.
+NioFlow is a lightweight, modular HTTP framework for Java 17 designed for building programmatic, explicit web applications. It leverages Java Non-blocking I/O (NIO) for connection tracking to provide an alternative to traditional servlet containers, prioritizing explicit endpoint mapping over hidden reflection.
+
+## Quick Start
+
+```java
+NioFlowApp app = new NioFlowApp();
+
+app.use(new LoggerMiddleware());
+app.use(new CorsMiddleware("*"));
+
+app.get("/", ctx -> ctx.send("Hello World"));
+app.post("/api/tasks", taskController::create);
+
+app.group("/api/admin", group -> {
+    group.use(new JwtAuthMiddleware());
+    group.get("/stats", adminController::stats);
+    group.delete("/tasks/:id", adminController::deleteTask);
+});
+
+app.listen(8080);
+```
+
+## Core Framework Features
+
+### NIO Connection Handling
+The core transport layer utilizes `java.nio` to implement an event-driven loop for connection tracking. By using a single `Selector` for connection acceptance, the system restricts the Thread Pool to active I/O readers rather than idling connections.
+
+### Declarative Routing
+The routing engine supports basic parameter matching.
+- Named Parameters: `/api/resources/:id`
+- Wildcard Support: `/assets/*`
+- Path-based Grouping: Prefixed groups with scoped middleware.
+
+### Direct File Channel Serving
+For asset delivery, the framework utilizes `java.nio.channels.FileChannel.transferTo()`. This instructs the operating system to transfer data directly from the file system to the network socket.
+
+### Unified HttpContext Abstraction
+The `HttpContext` provides a unified interface for request data extraction and response generation.
+- Type-safe JSON deserialization via `ctx.body(Class<T>)`.
+- Fluent response building: `ctx.status(201).json(data)`.
+- Path parameter retrieval via `ctx.pathParam(name)`.
 
 ## Architectural Overview
 
-The framework is built on a non-blocking architecture that separates connection management from request processing. This allows a single selector thread to manage thousands of concurrent connections efficiently.
+The framework uses a hybrid non-blocking and blocking architecture. It separates connection acceptance from request processing. A single selector thread manages accepting concurrent connections, then dispatches the socket channels to a worker thread pool for blocking I/O request parsing.
 
 ### System Architecture
 
@@ -31,7 +71,7 @@ graph TD
 
 ### Request Processing Lifecycle
 
-The lifecycle of a request in CoreHTTP follows a deterministic path through the middleware pipeline and routing engine.
+The lifecycle of a request in NioFlow follows a deterministic path through the middleware pipeline and routing engine.
 
 ```mermaid
 sequenceDiagram
@@ -49,28 +89,9 @@ sequenceDiagram
     R->>M: Execute Middleware Chain
     M->>H: Invoke Business Logic
     H->>H: Populate HttpContext
+    H->>W: Return HttpResponse
     W->>C: Transmit Buffered Response
 ```
-
-## Core Framework Features
-
-### Non-blocking I/O Engine
-The core transport layer utilizes `java.nio` to implement an event-driven loop. By using a single `Selector` for connection acceptance and I/O readiness, the system avoids the memory overhead associated with massive thread counts.
-
-### Advanced Regex Routing
-The routing engine supports dynamic path parameters and complex patterns.
-- Named Parameters: `/api/resources/:id`
-- Wildcard Support: `/assets/*`
-- Path-based Grouping: Prefixed groups with scoped middleware.
-
-### Zero-Copy Static File Serving
-For high-performance asset delivery, the framework utilizes `FileChannel.transferTo()`. This allows the operating system to transfer data directly from the file system cache to the network buffer, bypassing the Java heap entirely and reducing CPU cycles.
-
-### Unified HttpContext Abstraction
-The `HttpContext` provides a unified interface for request data extraction and response generation.
-- Type-safe JSON deserialization via `ctx.body(Class<T>)`.
-- Fluent response building: `ctx.status(201).json(data)`.
-- Path parameter retrieval via `ctx.pathParam(name)`.
 
 ## Repository Structure
 
@@ -78,7 +99,7 @@ The project is organized as a Multi-Module Maven repository to ensure strict iso
 
 ```text
 .
-├── corehttp-framework/       # Reusable framework logic (NIO, Parser, Router)
+├── nioflow-framework/       # Reusable framework logic (NIO, Parser, Router)
 │   ├── protocol/             # HTTP/1.1 Model and Parsing
 │   ├── routing/              # Regex Engine and Context logic
 │   ├── server/               # NIO Selector and Connection Management
@@ -98,7 +119,7 @@ The project is organized as a Multi-Module Maven repository to ensure strict iso
 To include the framework in a local environment:
 
 ```bash
-cd corehttp-framework
+cd nioflow-framework
 mvn clean install
 ```
 
@@ -115,7 +136,7 @@ mvn compile exec:java -Dexec.mainClass=com.jhanvi857.taskplanner.DemoApplication
 - **Path Traversal Protection**: Resolution logic validates canonical paths against the configured base directory.
 - **Payload Constraints**: Configurable limits on header size (8KB) and body size (10MB) to mitigate buffer-based attacks.
 - **Resource Management**: Bounded thread pools and request queues prevent resource exhaustion under denial-of-service conditions.
-- **Rate Limiting**: Sliding window implementation for per-IP request throttling.
+- **Rate Limiting**: Configurable window duration and request cap via `RateLimitMiddleware(maxRequests, windowDuration)`. Sliding window implementation for per-IP request throttling.
 
 ## Technical Specifications
 
@@ -127,6 +148,3 @@ mvn compile exec:java -Dexec.mainClass=com.jhanvi857.taskplanner.DemoApplication
 | Routing | Regex-based Pattern Matching |
 | Serialization | Jackson (JSON) |
 | Logging | SLF4J with Logback |
-
----
-Documentation compiled for High-Performance Systems Engineering standards.
