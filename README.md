@@ -96,11 +96,11 @@ Runtime.getRuntime().addShutdownHook(
 
 ## Core Features
 
-### NIO Connection Handling
+### 1. NIO Connection Handling
 
 The transport layer uses a single `Selector` thread exclusively for connection acceptance. Accepted connections are dispatched to a bounded worker thread pool for request parsing and processing. This model decouples connection tracking from I/O execution, meaning that idle connections consume no threads.
 
-### HTTPS / TLS (Native)
+### 2. HTTPS / TLS (Native)
 
 NioFlow supports TLS natively without requiring an external reverse proxy.
 
@@ -110,7 +110,7 @@ app.listenSecure(443, "keystore.jks", "password");
 
 Internally, `NioFlowApp` loads the provided `KeyStore`, constructs an `SSLContext`, and passes it to `HttpServer`. On connection acceptance, the raw `SocketChannel` is upgraded via Java's `SSLSocketFactory` during the NIO-to-worker handoff. No external tooling (Nginx, Caddy) is required for HTTPS termination.
 
-### Declarative Routing
+### 3. Declarative Routing
 
 Routes are registered programmatically with explicit path patterns. No annotation scanning occurs at startup.
 
@@ -125,7 +125,7 @@ Supported pattern types:
 - **Wildcard Segments**: `/assets/*`
 - **Path Groups**: Scoped middleware and shared prefix via `app.group()`
 
-### Async Database Offload
+### 4. Async Database Offload
 
 JDBC is inherently synchronous. Executing database queries directly on worker threads blocks those threads for the duration of each query, limiting concurrency under load. NioFlow addresses this by offloading all JDBC operations to a dedicated secondary executor pool inside the repository layer.
 
@@ -140,11 +140,11 @@ public CompletableFuture<Task> findById(long id) {
 
 The framework's primary worker threads are never blocked by database I/O. Controllers resolve futures via `.join()` after offload.
 
-### Zero-Copy Static File Serving
+### 5. Zero-Copy Static File Serving
 
 Static assets are served using `FileChannel.transferTo()`, which delegates the file-to-socket transfer directly to the operating system kernel. This avoids intermediate copies through the JVM heap and reduces CPU usage for asset delivery.
 
-### Unified HttpContext
+### 6. Unified HttpContext
 
 Every route handler receives a single `HttpContext` object encapsulating the full request/response lifecycle.
 
@@ -159,7 +159,7 @@ ctx.status(201).json(created);                  // Fluent chaining
 ctx.status(404).send("Not found");
 ```
 
-### Middleware Pipeline
+### 7. Middleware Pipeline
 
 Middleware is applied in declaration order. Global middleware applies to every request; scoped middleware applies only within a `group()` block.
 
@@ -173,7 +173,7 @@ app.group("/api/admin", group -> {
 });
 ```
 
-### Global Error Handling
+### 8. Global Error Handling
 
 Uncaught exceptions are intercepted at the framework level and routed to a registered handler. This prevents raw stack traces from reaching the client.
 
@@ -183,7 +183,7 @@ app.onError((err, ctx) -> {
 });
 ```
 
-### Graceful Shutdown
+### 9. Graceful Shutdown
 
 NioFlow provides a `drainAndStop` method that signals the thread pool to stop accepting new work and waits for active requests to complete before shutdown.
 
@@ -201,41 +201,47 @@ This ensures zero dropped requests during rolling deployments or container resta
 
 NioFlow uses a hybrid non-blocking and blocking architecture. Connection acceptance is non-blocking (NIO Selector). Request processing is blocking within a bounded worker pool.
 
-```text
-HTTP Client
-    │
-    ▼  TCP/IP
-NIO Selector Loop          <- Single thread, accepts all connections
-    │
-    ▼  Dispatch SocketChannel
-Event Manager
-    │
-    ▼  Queue Task
-Fixed Worker Thread Pool   <- Bounded; only active I/O threads
-    │
-    ├── HTTP Protocol Parser
-    ├── Regex Routing Engine
-    ├── Middleware Chain (Global and Scoped)
-    └── Route Handler
-            │
-            ├── FileChannel.transferTo()  <- Static Assets (zero-copy)
-            ├── CompletableFuture/JDBC    <- PostgreSQL (async offload)
-            └── HttpContext -> Response Writer -> Client
+```mermaid
+graph TD
+    Client[HTTP Client] -->|TCP/IP| Selector[NIO Selector Loop]
+    Selector -->|Accept/Read| EventManager[Event Manager]
+    EventManager -->|Queue Task| WorkerPool[Fixed Thread Pool]
+    
+    subgraph Execution Pipeline
+        WorkerPool --> Parser[HTTP Protocol Parser]
+        Parser --> Router[Regex Routing Engine]
+        Router --> MiddlewareChain[Global & Scoped Middleware]
+        MiddlewareChain --> Handler[Route Handler / Plugin]
+    end
+    
+    Handler -->|Zero-Copy| FileSystem[Static Assets]
+    Handler -->|JDBC| Database[(PostgreSQL)]
+    
+    Handler --> Context[HttpContext]
+    Context --> Responder[HTTP Response Writer]
+    Responder -->|Write| Client
 ```
 
 ### Request Lifecycle
 
-```text
-Client TCP Payload
-    -> NIO Selector accepts connection
-    -> Worker Thread parses HTTP/1.1 request
-    -> Router resolves matching pattern (regex)
-    -> Global middleware executes in order
-    -> Scoped middleware executes (if applicable)
-    -> Route handler invoked
-    -> HttpContext populated
-    -> Response serialized and transmitted
-    -> Connection kept alive (persistent)
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as NIO Selector
+    participant W as Worker Thread
+    participant R as Router
+    participant M as Middleware
+    participant H as Handler
+
+    C->>S: TCP Payload
+    S->>W: Dispatch Connection
+    W->>W: Parse HTTP Request
+    W->>R: Resolve Route (Regex Match)
+    R->>M: Execute Middleware Chain
+    M->>H: Invoke Business Logic
+    H->>H: Populate HttpContext
+    H->>W: Return HttpResponse
+    W->>C: Transmit Buffered Response
 ```
 
 ---
