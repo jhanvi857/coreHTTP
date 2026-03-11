@@ -15,10 +15,8 @@ try {
         throw "Maven build failed."
     }
 
-    # The target/classes contains our code, and we need the dependency JARs on the classpath.
-    # Maven's exec:java is the cleanest way to run without managing a long classpath string manually.
-    Write-Host "Starting CoreHTTP Server..." -ForegroundColor Green
-    & $MvnScript exec:java -D"exec.mainClass"="com.jhanvi857.coreHTTP.server.HttpServer"
+    Write-Host "Starting Task Planner App (Demo)..." -ForegroundColor Green
+    & $MvnScript -pl task-planner-app exec:java -D"exec.mainClass"="com.jhanvi857.taskplanner.DemoApplication"
 }
 finally {
     # Always return to the original directory
