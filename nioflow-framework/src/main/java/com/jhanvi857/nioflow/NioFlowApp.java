@@ -7,6 +7,7 @@ import com.jhanvi857.nioflow.server.HttpServer;
 
 public class NioFlowApp {
     private final Router router;
+    private HttpServer activeServer;
 
     public NioFlowApp() {
         this.router = new Router();
@@ -54,7 +55,36 @@ public class NioFlowApp {
         return this;
     }
 
+    public NioFlowApp onError(com.jhanvi857.nioflow.exception.ExceptionHandler handler) {
+        return exception(Exception.class, handler);
+    }
+
     public void listen(int port) {
-        new HttpServer(port).start(router);
+        this.activeServer = new HttpServer(port);
+        this.activeServer.start(router);
+    }
+
+    public void listenSecure(int port, String keystorePath, String password) {
+        try {
+            java.security.KeyStore ks = java.security.KeyStore.getInstance("JKS");
+            try (java.io.InputStream is = new java.io.FileInputStream(keystorePath)) {
+                ks.load(is, password.toCharArray());
+            }
+            javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory.getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, password.toCharArray());
+            javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS");
+            sslContext.init(kmf.getKeyManagers(), null, null);
+
+            this.activeServer = new HttpServer(port, sslContext);
+            this.activeServer.start(router);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start secure server", e);
+        }
+    }
+
+    public void drainAndStop(long timeout, java.util.concurrent.TimeUnit unit) {
+        if (this.activeServer != null) {
+            this.activeServer.drainAndStop(timeout, unit);
+        }
     }
 }

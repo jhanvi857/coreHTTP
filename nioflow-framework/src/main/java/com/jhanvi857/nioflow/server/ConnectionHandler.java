@@ -18,9 +18,13 @@ public class ConnectionHandler implements Runnable {
     private final SocketChannel channel;
     private final com.jhanvi857.nioflow.routing.Router router;
     private final SelectionKey key;
+    private final java.io.InputStream inStream;
+    private final java.io.OutputStream outStream;
 
-    public ConnectionHandler(SocketChannel channel, com.jhanvi857.nioflow.routing.Router router, SelectionKey key) {
+    public ConnectionHandler(SocketChannel channel, java.io.InputStream inStream, java.io.OutputStream outStream, com.jhanvi857.nioflow.routing.Router router, SelectionKey key) {
         this.channel = channel;
+        this.inStream = inStream;
+        this.outStream = outStream;
         this.router = router;
         this.key = key;
     }
@@ -28,9 +32,7 @@ public class ConnectionHandler implements Runnable {
     @Override
     public void run() {
         try {
-            // using java.nio.channels.Channels to bridge the NIO channel to a standard
-            // stream
-            java.io.InputStream in = java.nio.channels.Channels.newInputStream(channel);
+            java.io.InputStream in = this.inStream;
             HttpParser parser = new HttpParser();
 
             // handle multiple requests on the same connection.
@@ -89,7 +91,7 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 // Send the response
-                response.writeTo(java.nio.channels.Channels.newOutputStream(channel));
+                response.writeTo(this.outStream);
 
                 if (!keepAlive) {
                     break;
@@ -125,7 +127,7 @@ public class ConnectionHandler implements Runnable {
         try {
             com.jhanvi857.nioflow.protocol.HttpResponse response = new com.jhanvi857.nioflow.protocol.HttpResponse(
                     status, "<h1>" + status.getCode() + " " + message + "</h1>");
-            response.writeTo(java.nio.channels.Channels.newOutputStream(channel));
+            response.writeTo(this.outStream);
         } catch (java.io.IOException e) {
             logger.error("Failed to send error: {}", e.getMessage());
         }

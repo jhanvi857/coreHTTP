@@ -23,12 +23,18 @@ import com.jhanvi857.nioflow.protocol.HttpStatus;
 public class HttpServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
     private final int port;
-    private final ThreadPoolExecutor threadPool; // Changed to ThreadPoolExecutor for shutdown control
+    private final ThreadPoolExecutor threadPool;
     private final int socketReadTimeoutMs;
     private volatile boolean running = false;
+    private final javax.net.ssl.SSLContext sslContext;
 
     public HttpServer(int port) {
+        this(port, null);
+    }
+
+    public HttpServer(int port, javax.net.ssl.SSLContext sslContext) {
         this.port = port;
+        this.sslContext = sslContext;
         int workerThreads = readIntSetting("nioflow.threads", "NIOFLOW_THREADS", 10, 1);
         int queueCapacity = readIntSetting("nioflow.queueCapacity", "NIOFLOW_QUEUE_CAPACITY", 100, 1);
         this.socketReadTimeoutMs = readIntSetting("nioflow.socketTimeoutMs", "NIOFLOW_SOCKET_TIMEOUT_MS", 15000,
@@ -53,22 +59,7 @@ public class HttpServer {
     public void start(com.jhanvi857.nioflow.routing.Router router) {
         this.running = true;
 
-        // Shutdown Hook
-        // Ensure to clean up and finish current requests when stopping.
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutdown signal received. Starting graceful shutdown...");
-            this.running = false;
-            threadPool.shutdown();
-            try {
-                if (!threadPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                    threadPool.shutdownNow();
-                }
-                logger.info("NioFlow server stopped successfully.");
-            } catch (InterruptedException e) {
-                threadPool.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }));
+        // Removed internal shutdown hook. User should manage application lifecycle via drainAndStop()
 
         try {
             // 1. Open the selector to check whether current client is sending more request
@@ -137,10 +128,31 @@ public class HttpServer {
         logger.info("Accepted connection from {}", clientChannel.getRemoteAddress());
 
         try {
-            threadPool.execute(new ConnectionHandler(clientChannel, router, null));
+            java.io.InputStream inStream;
+            java.io.OutputStream outStream;
+
+            if (this.sslContext != null) {
+                javax.net.ssl.SSLSocketFactory factory = this.sslContext.getSocketFactory();
+                java.net.Socket secureSocket = factory.createSocket(clientChannel.socket(), 
+                    clientChannel.socket().getInetAddress().getHostAddress(), 
+                    clientChannel.socket().getPort(), true);
+                ((javax.net.ssl.SSLSocket) secureSocket).setUseClientMode(false);
+                ((javax.net.ssl.SSLSocket) secureSocket).startHandshake();
+                
+                inStream = secureSocket.getInputStream();
+                outStream = secureSocket.getOutputStream();
+            } else {
+                inStream = java.nio.channels.Channels.newInputStream(clientChannel);
+                outStream = java.nio.channels.Channels.newOutputStream(clientChannel);
+            }
+
+            threadPool.execute(new ConnectionHandler(clientChannel, inStream, outStream, router, null));
         } catch (RejectedExecutionException rejected) {
             logger.warn("Server busy! Rejecting connection.");
             sendServiceUnavailable(clientChannel);
+        } catch (javax.net.ssl.SSLHandshakeException sslEx) {
+            logger.warn("TLS Handshake failure: {}", sslEx.getMessage());
+            clientChannel.close();
         }
     }
 
@@ -183,6 +195,21 @@ public class HttpServer {
                 channel.close();
             } catch (IOException ignored) {
             }
+        }
+    }
+
+    public void drainAndStop(long timeout, TimeUnit unit) {
+        logger.info("Shutdown signal received. Starting graceful shutdown...");
+        this.running = false;
+        threadPool.shutdown();
+        try {
+            if (!threadPool.awaitTermination(timeout, unit)) {
+                threadPool.shutdownNow();
+            }
+            logger.info("NioFlow server stopped successfully.");
+        } catch (InterruptedException e) {
+            threadPool.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
