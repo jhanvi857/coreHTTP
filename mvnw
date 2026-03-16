@@ -19,6 +19,7 @@ WRAPPER_JAR="${MAVEN_PROJECTBASEDIR}/.mvn/wrapper/maven-wrapper.jar"
 JAVA_CMD="${JAVA_HOME:+${JAVA_HOME}/bin/}java"
 
 exec "$JAVA_CMD" \
+  "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
   -classpath "${WRAPPER_JAR}" \
   org.apache.maven.wrapper.MavenWrapperMain \
   "$@"

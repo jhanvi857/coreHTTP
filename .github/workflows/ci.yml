@@ -23,14 +23,16 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Make mvnw executable
-        run: chmod +x mvnw
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
 
       - name: Build and run tests (all modules)
-        run: ./mvnw clean test
+        run: mvn clean test
 
       - name: Package fat JAR
-        run: ./mvnw package -DskipTests -pl task-planner-app -am
+        run: mvn package -DskipTests -pl task-planner-app -am
 
       - name: Upload fat JAR artifact
         uses: actions/upload-artifact@v4
@@ -46,7 +48,6 @@ jobs:
     needs: build-and-test
     env:
       NIOFLOW_ENABLE_DB: "false"
-      nioflow_jwtSecret: "ci-integration-test-secret-minimum-32-chars"
 
     steps:
       - name: Checkout
@@ -59,11 +60,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Make mvnw executable
-        run: chmod +x mvnw
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
 
       - name: Run integration tests
-        run: ./mvnw test -pl task-planner-app -am -Dnioflow.jwtSecret="ci-integration-test-secret-minimum-32-chars"
+        run: mvn test -pl task-planner-app -am -Dnioflow.jwtSecret="ci-integration-test-secret-minimum-32-chars"
 
   # Container Build 
   docker-build:
@@ -105,11 +108,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Make mvnw executable
-        run: chmod +x mvnw
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
 
       - name: Run OWASP Dependency Check (CVSS ≥ 7 fails advisory)
-        run: ./mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
+        run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
 
       - name: Upload dependency-check report
         if: always()
