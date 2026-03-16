@@ -66,9 +66,20 @@ public class DemoApplication {
             ctx.status(HttpStatus.BAD_REQUEST)
                     .json(java.util.Map.of("error", "Bad Request", "details", e.getMessage()));
         });
+        
+        app.onError((err, ctx) -> {
+            logger.error("Unhandled Exception: ", err);
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+               .json(java.util.Map.of("error", "Internal Server Error", "details", err.getMessage()));
+        });
 
         // 8. Static File Routes
         app.register(new com.jhanvi857.nioflow.plugin.StaticFilesPlugin(staticDir, "/"));
+
+        // Register Graceful Shutdown Hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            app.drainAndStop(30, java.util.concurrent.TimeUnit.SECONDS);
+        }));
 
         app.listen(8080);
     }
