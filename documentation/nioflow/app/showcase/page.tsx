@@ -86,16 +86,19 @@ export default function ShowcasePage() {
               <h3 className="mb-6 text-lg font-bold tracking-tight text-white border-b border-[#222] pb-4">Security Layer</h3>
               <div className="space-y-4 text-sm font-mono">
                 <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                  <span className="text-gray-300 text-[13px]">JWT Provider</span>
-                  <span className="text-blue-400 text-[11px] tracking-widest">v0.12.5</span>
+                  <span className="text-gray-300 text-[13px]">Native TLS Context</span>
+                  <span className="text-blue-400 text-[11px] font-bold tracking-widest drop-shadow-[0_0_4px_rgba(96,165,250,0.4)]">ENABLED</span>
                 </div>
                 <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
                   <span className="text-gray-300 text-[13px]">Rate Limiter</span>
-                  <span className="text-purple-400 text-[11px] tracking-widest drop-shadow-[0_0_4px_rgba(168,85,247,0.4)]">ENABLED</span>
+                  <span className="text-purple-400 text-[11px] font-bold tracking-widest drop-shadow-[0_0_4px_rgba(168,85,247,0.4)]">ACTIVE</span>
                 </div>
                 <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                  <span className="text-gray-300 text-[13px]">BCrypt Hashing</span>
-                  <span className="text-green-400 text-[11px] tracking-widest">ACTIVE</span>
+                  <span className="text-gray-300 text-[13px]">Global Error Trap</span>
+                  <span className="text-green-400 text-[11px] font-bold tracking-widest gap-2 flex items-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    SECURED
+                  </span>
                 </div>
               </div>
             </article>
@@ -130,9 +133,9 @@ export default function ShowcasePage() {
           </article>
 
           <article className="rounded-2xl border border-[#222] bg-[#111] p-8 shadow-xl flex flex-col">
-            <h3 className="mb-4 text-xl font-bold tracking-tight text-white border-b border-[#222] pb-4">SQL Pool Profile</h3>
+            <h3 className="mb-4 text-xl font-bold tracking-tight text-white border-b border-[#222] pb-4">Async Database Pool</h3>
             <p className="mb-8 text-[15px] text-gray-400 leading-relaxed font-mono">
-              HikariCP-backed pooling keeps query latency stable while preserving transactional integrity under load.
+              Dedicated Executor offloading synchronous JDBC thread locking from the main worker pool. Ensure maximum transaction throughput.
             </p>
             <div className="grid grid-cols-3 gap-6 text-center font-mono text-sm mt-auto">
               <div className="border border-[#333] bg-[#0a0a0a] py-6 rounded-xl flex flex-col gap-2 items-center justify-center">

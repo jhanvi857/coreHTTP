@@ -57,10 +57,11 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0e0e11] bottom-0 h-full w-full z-10 pointer-events-none" />
                   <p><span className="text-green-400">$</span> ./scripts/run.ps1</p>
                   <p className="text-gray-500 mt-2">[INFO] Bootstrap: Initializing Server Components...</p>
-                  <p className="text-gray-500">[INFO] Database: HikariCP pool establishing 10 local connections to PostgreSQL</p>
-                  <p className="text-gray-500">[INFO] NIO: Registering ServerSocketChannel on 0.0.0.0:8080</p>
+                  <p className="text-gray-500">[INFO] Security: Loaded keystore.jks, enabling Native TLS</p>
+                  <p className="text-gray-500">[INFO] Database: JDBC pool active on Async Executor ThreadPool</p>
+                  <p className="text-gray-500">[INFO] NIO: Registering ServerSocketChannel on 0.0.0.0:443</p>
                   <p className="text-blue-400 mb-4">[READY] Selector Event Loop started successfully.</p>
-                  <p className="mt-4"><span className="text-green-400">$</span> curl -X GET http://localhost:8080/api/health</p>
+                  <p className="mt-4"><span className="text-green-400">$</span> curl -X GET https://localhost/api/health</p>
                   <p className="text-yellow-400 mt-2">HTTP/1.1 200 OK</p>
                   <p className="text-gray-400">Content-Type: application/json</p>
                   <p className="text-gray-300 mt-2">{`{ "status": "UP", "uptime": "0ms" }`}</p>
@@ -83,48 +84,70 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-3 gap-8">
               {/* Feature 1 */}
-              <div className="p-10 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-8 transition-transform group-hover:scale-110">
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
                   NIO
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Hybrid NIO/Blocking Architecture</h3>
-                <p className="text-gray-400 leading-relaxed text-[16px]">
-                  Built on Java's <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-sm">java.nio</code> module for the <code>ServerSocketChannel</code>. A single event loop accepts connections using a Selector, then hands off the blocking <code>SocketChannel</code> read/write operations to a <code>ThreadPoolExecutor</code>. Under high load, the bounded queue safely rejects extra connections.
+                <h3 className="text-xl font-bold mb-3 text-white">Hybrid NIO Architecture</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Built on Java's <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-[13px]">java.nio</code>. Connection tracking and event loops use efficient Selectors, while request processing is handled by a bounded worker pool.
                 </p>
               </div>
 
               {/* Feature 2 */}
-              <div className="p-10 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-8 transition-transform group-hover:scale-110">
-                  DMA
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  TLS
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Zero-Copy Memory Transfers</h3>
-                <p className="text-gray-400 leading-relaxed text-[16px]">
-                  Implements hardware-accelerated Direct Memory Access (DMA). File payloads are transferred directly from disk cache to the network socket layer via <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-sm">FileChannel.transferTo()</code> without ever crossing into user-space memory.
+                <h3 className="text-xl font-bold mb-3 text-white">Native HTTPS Security</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Direct <code>SSLContext</code> integration allows raw <code>SocketChannel</code> handoffs to <code>SSLSocketFactory</code>, dropping the requirement for Nginx proxies entirely for HTTPS.
                 </p>
               </div>
 
               {/* Feature 3 */}
-              <div className="p-10 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-8 transition-transform group-hover:scale-110">
-                  MID
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  DMA
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Chain of Responsibility</h3>
-                <p className="text-gray-400 leading-relaxed text-[16px]">
-                  Requests traverse a strict middleware pipeline before reaching controllers. Features structured logging pipelines, token-bucket rate limiters, and JWT-based authentication blocks injected dynamically on boot.
+                <h3 className="text-xl font-bold mb-3 text-white">Zero-Copy Memory</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Hardware-accelerated Direct Memory Access via <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-[13px]">FileChannel.transferTo()</code>. Static files hit the socket without crossing into JVM user-space memory.
                 </p>
               </div>
 
               {/* Feature 4 */}
-              <div className="p-10 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-12 h-12 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-8 transition-transform group-hover:scale-110">
-                  JBDC
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  DB
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Robust Persistence</h3>
-                <p className="text-gray-400 leading-relaxed text-[16px]">
-                  A hardened data access layer utilizing HikariCP to aggressively pool database connections. Paired with strict prepared statements and PostgreSQL to handle tens of thousands of secure transactions safely.
+                <h3 className="text-xl font-bold mb-3 text-white">Async Database Offload</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Prevent worker thread blocking using <code>CompletableFuture</code>. Operations hit HikariCP and PostgreSQL on a dedicated secondary loop, ensuring maximum throughput.
+                </p>
+              </div>
+
+              {/* Feature 5 */}
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  ERR
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Global Error Handling</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Uncaught runtime exceptions are cleanly intercepted. Configure custom JSON fallback responses to guarantee you never leak a raw stack trace to the public internet.
+                </p>
+              </div>
+
+              {/* Feature 6 */}
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  SIG
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Graceful Shutdown</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Built for containerized environments. Using <code>drainAndStop()</code>, NioFlow safely completes all active TCP requests before permitting SIGTERM termination.
                 </p>
               </div>
             </div>

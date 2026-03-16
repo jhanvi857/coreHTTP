@@ -80,29 +80,29 @@ export const configRows: ConfigRow[] = [
 export const roadmapMilestones: Milestone[] = [
   {
     phase: "Phase 1 - COMPLETED",
-    goal: "Core NIO Engine",
+    goal: "Core Engine Mechanics",
     deliverables: [
-      "Selector-based event loop",
-      "Request/Response protocol parsing",
-      "Static file streaming",
+      "NIO Selector-based TCP event loop",
+      "Bounded Worker Thread Pool handoff",
+      "Explicit HTTP/1.1 Request model",
     ],
   },
   {
     phase: "Phase 2 - COMPLETED",
-    goal: "Framework Features",
+    goal: "Framework Logistics",
     deliverables: [
-      "Method-based routing",
-      "Middleware chain system",
-      "JWT & BCrypt security",
+      "Zero-Copy (DMA) static file serving natively",
+      "Chain-of-responsibility Middleware pipelines",
+      "Declarative regex routing and parameter extraction",
     ],
   },
   {
     phase: "Phase 3 - COMPLETED",
-    goal: "Production Grade",
+    goal: "Production Hardening",
     deliverables: [
-      "PostgreSQL persistence",
-      "Prometheus metrics & logging",
-      "Docker/Compose orchestration",
+      "Native HTTPS/TLS with SSLSocketFactory",
+      "Asynchronous JDBC thread-offloading",
+      "Global Error intercepts & Graceful Shutdowns",
     ],
   },
 ];

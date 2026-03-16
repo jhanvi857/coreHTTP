@@ -4,19 +4,25 @@ import { useState } from "react";
 
 const CODE_SNIPPET = `public class ServerApp {
     public static void main(String[] args) {
-        Router router = new Router();
+        NioFlowApp app = new NioFlowApp();
 
         // Middleware Stack
-        router.use(new LoggerMiddleware());
-        router.use(new CorsMiddleware());
+        app.use(new LoggerMiddleware());
+        app.use(new RateLimitMiddleware(100, Duration.ofMinutes(1)));
 
-        // Auth Protected Route
-        router.get("/api/orders", 
-            Auth.require(Role.ADMIN), 
-            new OrderController()::list
-        );
+        // Handlers & Async DB offload
+        app.get("/api/orders", new OrderController()::list);
 
-        new HttpServer(8080).start(router);
+        // Global Error Intercept
+        app.onError((err, ctx) -> ctx.status(500).json("Fail"));
+
+        // Graceful Shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            app.drainAndStop(30, TimeUnit.SECONDS);
+        }));
+
+        // Native TLS Integration
+        app.listenSecure(443, "keystore.jks", "password");
     }
 }`;
 
@@ -71,7 +77,7 @@ export default function CodeDemo() {
                                         if (['public', 'class', 'static', 'void', 'new', 'return'].includes(part.trim())) {
                                             return <span key={j} className="text-[#f97583]">{part}</span>;
                                         }
-                                        if (['Router', 'HttpServer', 'Auth', 'Role', 'OrderController'].includes(part.trim())) {
+                                        if (['NioFlowApp', 'Runtime', 'Thread', 'TimeUnit', 'Duration', 'OrderController'].includes(part.trim())) {
                                             return <span key={j} className="text-[#b392f0]">{part}</span>;
                                         }
                                         if (part.startsWith('"') || part.endsWith('"')) {

@@ -16,7 +16,7 @@ const CodeBlock = ({ code, language = "bash", title }: { code: string, language?
   const getTokenColor = (token: string) => {
     const t = token.trim();
     if (/^(public|class|static|void|new|return|import|const|function|CREATE|TABLE|IF|NOT|EXISTS|PRIMARY|KEY|DEFAULT|SERIAL|INT|DECIMAL|VARCHAR|TIMESTAMP|CURRENT_TIMESTAMP|docker-compose|up)$/.test(t)) return "text-[#f97583]";
-    if (/^(Router|HttpServer|Auth|Role|OrderController|String|HttpStatus|System|out|req|res)$/.test(t)) return "text-[#b392f0]";
+    if (/^(NioFlowApp|CompletableFuture|ExecutorService|Executors|Connection|PreparedStatement|ResultSet|SQLException|CompletionException|TimeUnit|Thread|Map|List|Runtime|String|HttpStatus|System|out|req|res)$/.test(t)) return "text-[#b392f0]";
     if (t.startsWith('"') || t.startsWith("'") || t.startsWith('`')) return "text-[#9ecbff]";
     return "";
   };
@@ -102,13 +102,15 @@ export default function DocsPage() {
               <ul className="space-y-1">
                 <SidebarLink href="#middleware">Middleware & Auth</SidebarLink>
                 <SidebarLink href="#cors-ratelimit">CORS & Rate Limiting</SidebarLink>
+                <SidebarLink href="#tls-security">Native TLS (HTTPS)</SidebarLink>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-xs uppercase tracking-wider text-gray-900 dark:text-gray-100">Advanced Features</h4>
               <ul className="space-y-1">
-                <SidebarLink href="#database">Database (HikariCP / JDBC)</SidebarLink>
+                <SidebarLink href="#database">Async Database (HikariCP)</SidebarLink>
                 <SidebarLink href="#static-files">Zero-Copy Static Files</SidebarLink>
+                <SidebarLink href="#graceful-shutdown">Graceful Shutdown</SidebarLink>
                 <SidebarLink href="#plugins">Plugin Architecture</SidebarLink>
                 <SidebarLink href="#tuning">Concurrency & Thread Pool</SidebarLink>
               </ul>
@@ -395,47 +397,53 @@ app.get("/error-prone", ctx -> {
 });`}
           />
 
-          <H2 id="database">Database (HikariCP / JDBC)</H2>
+          <H2 id="tls-security">Native TLS (HTTPS)</H2>
           <p className="text-gray-600 dark:text-gray-400 mb-6 text-[15px] leading-relaxed">
-            Because worker threads run in a blocking context, direct JDBC operations are well-suited for NioFlow. We strongly recommend using HikariCP to manage a bounded connection pool to prevent exhausting your database resources.
+            NioFlow natively terminates TLS for raw secure connections using Java's built-in <code>SSLContext</code>, avoiding the necessity of external proxies like NGINX or Caddy. During the NIO Selector event loop, the raw <code>SocketChannel</code> is upgraded utilizing a highly secure <code>SSLSocketFactory</code> handoff before your middleware triggers.
+          </p>
+          
+          <CodeBlock
+            title="App.java"
+            language="java"
+            code={`// Provide a keystore and pass to enable native HTTPS on port 443
+app.listenSecure(443, "keystore.jks", "my-secure-password");`}
+          />
+
+          <H2 id="database">Async Database Offload</H2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 text-[15px] leading-relaxed">
+            JDBC is inherently synchronous. To prevent blocking the main NioFlow worker threads, we strongly recommend offloading database queries to a dedicated secondary executor using <code>CompletableFuture</code>. Combine this with HikariCP for aggressive connection pooling.
           </p>
 
           <CodeBlock
-            title="Database Integration (HikariCP / JDBC)"
+            title="Database Integration (CompletableFuture)"
             language="java"
-            code={`// 1. Initialize Hikari Connection Pool at Application Startup
-HikariConfig config = new HikariConfig();
-config.setJdbcUrl(System.getenv("JDBC_URL"));
-config.setUsername(System.getenv("DB_USER"));
-config.setPassword(System.getenv("DB_PASS"));
-config.setMaximumPoolSize(10); // Matches your ThreadPool bounds
+            code={`// 1. Initialize DB Executor
+ExecutorService dbExecutor = Executors.newFixedThreadPool(10); // Match DB Pool Size
 
-HikariDataSource ds = new HikariDataSource(config);
+// 2. Wrap Synchronous JDBC in CompletableFuture
+public CompletableFuture<List<Map<String, Object>>> fetchTasksAsync(HikariDataSource ds) {
+    return CompletableFuture.supplyAsync(() -> {
+        List<Map<String, Object>> tasks = new ArrayList<>();
+        try (Connection conn = ds.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM tasks");
+             ResultSet rs = stmt.executeQuery()) {
+             
+             // Process ResultSet
+             while (rs.next()) {
+                 tasks.add(Map.of("id", rs.getInt("id"), "title", rs.getString("title")));
+             }
+             return tasks;
+        } catch (SQLException e) {
+             throw new CompletionException("DB Error", e); // Caught by global ErrorHandler
+        }
+    }, dbExecutor);
+}
 
-// 2. Business Logic Execution inside Controller/Repository
+// 3. Controller execution
 app.get("/api/tasks", ctx -> {
-    List<Map<String, Object>> tasks = new ArrayList<>();
-    
-    // Request a connection from the pool (blocks briefly if pool is busy)
-    try (Connection conn = ds.getConnection();
-         PreparedStatement stmt = conn.prepareStatement("SELECT id, title, status FROM tasks LIMIT 50");
-         ResultSet rs = stmt.executeQuery()) {
-         
-         while (rs.next()) {
-             tasks.add(Map.of(
-                 "id", rs.getInt("id"),
-                 "title", rs.getString("title"),
-                 "status", rs.getString("status")
-             ));
-         }
-         
-         // Serialize standard Java Collections to JSON automatically
-         ctx.status(200).json(tasks);
-         
-    } catch (SQLException e) {
-        // Safe throwing, handled by GlobalExceptionHandler
-        throw new RuntimeException("Database error: " + e.getMessage());
-    }
+    // Execution waits on the Future, ensuring ThreadPool safety limits are maintained
+    List<Map<String, Object>> result = fetchTasksAsync(myDataSource).join(); 
+    ctx.status(200).json(result);
 });`}
           />
 
@@ -454,6 +462,21 @@ app.get("/api/tasks", ctx -> {
 app.register(new StaticFilesPlugin("src/main/resources/public"));
 
 app.listen(8080);`}
+          />
+
+          <H2 id="graceful-shutdown">Graceful Shutdown</H2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 text-[15px] leading-relaxed">
+            To prevent dropping critical requests during container rollouts, NioFlow includes mechanical support for graceful terminations. Calling <code>drainAndStop()</code> stops the Selector event loop from accepting new socket streams, then safely awaits active I/O threads to finalize their outputs.
+          </p>
+
+          <CodeBlock
+            title="App.java"
+            language="java"
+            code={`Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+    // Blocks for up to 30 seconds for active network/DB requests to finish cleanly
+    app.drainAndStop(30, TimeUnit.SECONDS);
+    System.out.println("NioFlow Framework shutdown complete.");
+}));`}
           />
 
           <H2 id="plugins">Plugin Architecture</H2>
