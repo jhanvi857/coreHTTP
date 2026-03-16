@@ -14,6 +14,17 @@ public class DemoApplication {
     private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
     public static void main(String[] args) {
+        String jwtSecret = System.getProperty("nioflow.jwtSecret");
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            jwtSecret = System.getenv("JWT_SECRET");
+        }
+        if (jwtSecret == null || jwtSecret.length() < 32) {
+            LoggerFactory.getLogger(DemoApplication.class)
+                .error("JWT_SECRET must be set (min 32 characters). "
+                     + "Set the JWT_SECRET environment variable and restart.");
+            System.exit(1);
+        }
+
         NioFlowApp app = new NioFlowApp();
 
         // 1. Global Middleware
@@ -45,6 +56,7 @@ public class DemoApplication {
         });
 
         app.group("/api/tasks", tasks -> {
+            tasks.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
             TaskController taskController = new TaskController();
             tasks.get("/", taskController::list);
             tasks.post("/", taskController::create);
@@ -52,13 +64,12 @@ public class DemoApplication {
             tasks.delete("/:id", taskController::delete);
         });
 
-        // 6. Auth Demo Endpoint
-        app.get("/api/secure", ctx -> {
-            String user = ctx.header("X-Auth-User");
-            if (user == null) {
-                user = "anonymous";
-            }
-            ctx.status(HttpStatus.OK).json(java.util.Map.of("message", "Hello, " + user));
+        app.group("/api/secure", secure -> {
+            secure.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
+            secure.get("/", ctx -> {
+                String user = ctx.header("X-Auth-User");
+                ctx.status(HttpStatus.OK).json(java.util.Map.of("message", "Hello, " + user));
+            });
         });
 
         // 7. Global Custom Exception Handlers
