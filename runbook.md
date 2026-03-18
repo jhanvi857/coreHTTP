@@ -14,6 +14,7 @@ flowchart LR
       App --> DB[(PostgreSQL)]
       App --> Metrics[/metrics endpoint/]
       App --> Health[/_health endpoint/]
+      App --> Ready[/_ready endpoint/]
 ```
 
 ### Request Handling Topology
@@ -69,6 +70,14 @@ sequenceDiagram
 - `NIOFLOW_SOCKET_TIMEOUT_MS` (default `15000`)
 - `NIOFLOW_CORS_ORIGIN` (default `http://localhost:3000` in app bootstrap)
 - `NIOFLOW_STATIC_DIR` (auto-resolved when unset)
+- `NIOFLOW_EXPOSE_ERROR_DETAILS` (default `false`; keep false in production)
+
+### Optional native TLS mode
+
+- `NIOFLOW_TLS_ENABLED=true`
+- `NIOFLOW_TLS_KEYSTORE_PATH=/path/to/keystore.jks`
+- `NIOFLOW_TLS_KEYSTORE_PASSWORD=<keystore-password>`
+- `NIOFLOW_TLS_PORT=8443` (optional)
 
 ### Recommended production baseline
 
@@ -131,6 +140,7 @@ Run these checks after startup and after each deploy:
 
 ```bash
 curl -i http://localhost:8080/_health
+curl -i http://localhost:8080/_ready
 curl -i http://localhost:8080/metrics
 curl -i http://localhost:8080/api/tasks/
 ```
@@ -138,6 +148,7 @@ curl -i http://localhost:8080/api/tasks/
 Expected results:
 
 - `/_health` -> `200` with JSON status payload.
+- `/_ready` -> `200` when dependencies are ready, `503` when DB mode is on but DB is unavailable.
 - `/metrics` -> `200` with metrics text content.
 - `/api/tasks/` without auth -> `401 Unauthorized`.
 
@@ -165,6 +176,11 @@ Example response:
    "memory_used_mb": 42
 }
 ```
+
+### Readiness endpoint
+
+- Path: `/_ready`
+- Purpose: dependency-aware readiness check for deploy cutovers and load balancer probes.
 
 ### Metrics endpoint
 
@@ -231,6 +247,19 @@ Choose one:
 
 Run old and new versions in parallel behind a proxy/load balancer, then cut over only after the new version passes health and auth checks.
 
+### Runtime sizing validation
+
+Use the bundled k6 script to validate worker/queue sizing before production rollout:
+
+```bash
+# Linux/macOS
+BASE_URL=http://localhost:8080 ./scripts/load-test.sh
+
+# Windows PowerShell
+$env:BASE_URL="http://localhost:8080"
+./scripts/load-test.ps1
+```
+
 ---
 
 ## 9. Incident Response Playbooks
@@ -277,7 +306,7 @@ The CI workflow includes:
 - Build and unit tests.
 - Integration tests.
 - Container build validation.
-- Advisory dependency vulnerability scanning.
+- Blocking dependency vulnerability scanning (OWASP Dependency Check).
 
 Before promoting to production, ensure the target commit has green CI status.
 

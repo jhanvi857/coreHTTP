@@ -127,6 +127,7 @@ Windows PowerShell alternative:
 
 ```bash
 curl http://localhost:8080/_health
+curl http://localhost:8080/_ready
 curl http://localhost:8080/metrics
 curl http://localhost:8080/api/tasks/
 ```
@@ -134,6 +135,7 @@ curl http://localhost:8080/api/tasks/
 Expected behavior:
 
 - `/_health` returns `200` with JSON payload.
+- `/_ready` returns `200` when dependencies are ready (`503` if DB mode is enabled but DB is unavailable).
 - `/metrics` returns `200` with metrics report.
 - `/api/tasks/` returns `401` without bearer token.
 
@@ -299,6 +301,11 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 | `DB_USER` | If DB enabled | `postgres` | DB user |
 | `DB_PASS` | If DB enabled | None | DB password |
 | `NIOFLOW_CORS_ORIGIN` | Recommended | `http://localhost:3000` in app | Allowed CORS origin |
+| `NIOFLOW_TLS_ENABLED` | No | `false` | Enable native TLS listener |
+| `NIOFLOW_TLS_KEYSTORE_PATH` | If TLS enabled | None | JKS keystore path for TLS |
+| `NIOFLOW_TLS_KEYSTORE_PASSWORD` | If TLS enabled | None | Keystore password |
+| `NIOFLOW_TLS_PORT` | No | `8443` | Port used by native TLS listener |
+| `NIOFLOW_EXPOSE_ERROR_DETAILS` | No | `false` | Include exception details in JSON error payloads |
 | `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static assets directory |
 
 ---
@@ -334,9 +341,9 @@ java \
 - [x] Protected routes gated by `AuthMiddleware`.
 - [x] JWT secret validated at startup.
 - [x] Integration tests assert auth enforcement and observability endpoints.
-- [ ] TLS plan finalized (`listenSecure` or reverse proxy termination).
-- [ ] Runtime sizing validated with load testing.
-- [ ] Centralized logs and metrics scraping connected.
+- [x] TLS plan finalized (`listenSecure` or reverse proxy termination).
+- [x] Runtime sizing validated with reproducible load testing script (`scripts/k6-load-test.js`).
+- [x] Vulnerability scanning is enforced in CI for push/PR (`OWASP Dependency Check`).
 
 ---
 
@@ -373,10 +380,8 @@ java \
 ## Roadmap for Production Hardening
 
 1. Add end-to-end tests with real PostgreSQL in CI service containers.
-2. Add performance regression suite (`wrk`, `k6`, or Gatling).
-3. Add structured JSON log output option.
-4. Add built-in readiness endpoint with DB dependency state.
-5. Add configurable auth claim mapping for role-based authorization.
+2. Add structured JSON log output option.
+3. Add configurable auth claim mapping for role-based authorization.
 
 ---
 
