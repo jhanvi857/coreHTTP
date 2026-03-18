@@ -3,6 +3,7 @@ package com.jhanvi857.taskplanner;
 import com.jhanvi857.nioflow.NioFlowApp;
 import com.jhanvi857.nioflow.protocol.HttpStatus;
 import com.jhanvi857.taskplanner.controller.TaskController;
+import com.jhanvi857.taskplanner.db.DatabaseManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,7 @@ public class DemoApplication {
         }
 
         NioFlowApp app = new NioFlowApp();
+        boolean exposeErrorDetails = isTrue(System.getenv("NIOFLOW_EXPOSE_ERROR_DETAILS"));
 
         // 1. Global Middleware
         app.use(new com.jhanvi857.nioflow.middleware.LoggerMiddleware());
@@ -51,6 +53,22 @@ public class DemoApplication {
 
         // 4. Observability Routes
         app.register(new com.jhanvi857.nioflow.plugin.HealthCheckPlugin());
+        app.get("/_ready", ctx -> {
+            boolean dbEnabled = DatabaseManager.isEnabled();
+            boolean dbHealthy = DatabaseManager.isHealthy();
+
+            if (!dbEnabled || dbHealthy) {
+                ctx.status(HttpStatus.OK).json(java.util.Map.of(
+                        "status", "UP",
+                        "database", dbEnabled ? "UP" : "DISABLED"));
+                return;
+            }
+
+            ctx.status(HttpStatus.SERVICE_UNAVAILABLE).json(java.util.Map.of(
+                    "status", "DOWN",
+                    "database", "DOWN"));
+        });
+
         app.get("/metrics", ctx -> {
             ctx.status(HttpStatus.OK).send(com.jhanvi857.nioflow.middleware.MetricsMiddleware.getMetricsReport());
         });
@@ -74,14 +92,24 @@ public class DemoApplication {
 
         // 7. Global Custom Exception Handlers
         app.exception(IllegalArgumentException.class, (e, ctx) -> {
-            ctx.status(HttpStatus.BAD_REQUEST)
-                    .json(java.util.Map.of("error", "Bad Request", "details", e.getMessage()));
+            if (exposeErrorDetails) {
+                ctx.status(HttpStatus.BAD_REQUEST)
+                        .json(java.util.Map.of("error", "Bad Request", "details", e.getMessage()));
+            } else {
+                ctx.status(HttpStatus.BAD_REQUEST)
+                        .json(java.util.Map.of("error", "Bad Request"));
+            }
         });
         
         app.onError((err, ctx) -> {
             logger.error("Unhandled Exception: ", err);
-            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
-               .json(java.util.Map.of("error", "Internal Server Error", "details", err.getMessage()));
+            if (exposeErrorDetails) {
+                ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .json(java.util.Map.of("error", "Internal Server Error", "details", err.getMessage()));
+            } else {
+                ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .json(java.util.Map.of("error", "Internal Server Error"));
+            }
         });
 
         // 8. Static File Routes
@@ -92,7 +120,39 @@ public class DemoApplication {
             app.drainAndStop(30, java.util.concurrent.TimeUnit.SECONDS);
         }));
 
-        app.listen(8080);
+        String tlsEnabled = System.getenv("NIOFLOW_TLS_ENABLED");
+        if (isTrue(tlsEnabled)) {
+            String keystorePath = System.getenv("NIOFLOW_TLS_KEYSTORE_PATH");
+            String keystorePassword = System.getenv("NIOFLOW_TLS_KEYSTORE_PASSWORD");
+
+            if (keystorePath == null || keystorePath.isBlank() || keystorePassword == null || keystorePassword.isBlank()) {
+                throw new IllegalStateException(
+                        "NIOFLOW_TLS_ENABLED=true requires NIOFLOW_TLS_KEYSTORE_PATH and NIOFLOW_TLS_KEYSTORE_PASSWORD.");
+            }
+
+            int tlsPort = readPort("NIOFLOW_TLS_PORT", 8443);
+            logger.info("Starting TLS listener on port {} using keystore {}", tlsPort, keystorePath);
+            app.listenSecure(tlsPort, keystorePath, keystorePassword);
+            return;
+        }
+
+        app.listen(readPort("PORT", 8080));
+    }
+
+    private static boolean isTrue(String value) {
+        return value != null && "true".equalsIgnoreCase(value.trim());
+    }
+
+    private static int readPort(String envKey, int defaultPort) {
+        String value = System.getenv(envKey);
+        if (value == null || value.isBlank()) {
+            return defaultPort;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+            return defaultPort;
+        }
     }
 
     private static String resolveDefaultStaticDir() {
