@@ -12,6 +12,11 @@ services:
     build: .
     ports:
       - "8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
     environment:
       - JDBC_URL=jdbc:postgresql://db:5432/nioflow
       - DB_USER=postgres
@@ -20,6 +25,12 @@ services:
       - NIOFLOW_ENABLE_DB=true
       - NIOFLOW_CORS_ORIGIN=${NIOFLOW_CORS_ORIGIN:?NIOFLOW_CORS_ORIGIN is required (e.g. https://yourdomain.com).}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required and must be at least 32 characters.}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/_ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
