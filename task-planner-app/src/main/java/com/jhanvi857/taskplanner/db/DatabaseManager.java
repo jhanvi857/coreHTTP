@@ -5,6 +5,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class DatabaseManager {
@@ -28,15 +30,26 @@ public class DatabaseManager {
                 HikariConfig config = new HikariConfig();
 
                 // Env-based configuration
-                String jdbcUrl = System.getenv("JDBC_URL");
-                if (jdbcUrl == null)
+                String jdbcUrl = System.getProperty("nioflow.jdbcUrl");
+                if (jdbcUrl == null || jdbcUrl.isBlank()) {
+                    jdbcUrl = System.getenv("JDBC_URL");
+                }
+                if (jdbcUrl == null || jdbcUrl.isBlank()) {
                     jdbcUrl = "jdbc:postgresql://localhost:5432/nioflow";
+                }
 
-                String user = System.getenv("DB_USER");
-                if (user == null)
+                String user = System.getProperty("nioflow.dbUser");
+                if (user == null || user.isBlank()) {
+                    user = System.getenv("DB_USER");
+                }
+                if (user == null || user.isBlank()) {
                     user = "postgres";
+                }
 
-                String pass = System.getenv("DB_PASS");
+                String pass = System.getProperty("nioflow.dbPass");
+                if (pass == null || pass.isBlank()) {
+                    pass = System.getenv("DB_PASS");
+                }
                 if (pass == null || pass.isBlank()) {
                     logger.error("DB_PASS environment variable is required when database is enabled.");
                     throw new IllegalStateException("DB_PASS not configured.");
@@ -60,6 +73,7 @@ public class DatabaseManager {
                 logger.info("Database connection pool initialized successfully.");
             } catch (Exception e) {
                 logger.error("Failed to initialize database pool: {}", e.getMessage());
+                throw new IllegalStateException("Database initialization failed while DB mode is enabled.", e);
             }
         }
     }
@@ -77,6 +91,24 @@ public class DatabaseManager {
     public static void shutdown() {
         if (dataSource != null) {
             dataSource.close();
+        }
+    }
+
+    public static boolean isHealthy() {
+        if (!isEnabled()) {
+            return true;
+        }
+        if (dataSource == null) {
+            return false;
+        }
+
+        try (Connection con = dataSource.getConnection();
+                PreparedStatement ps = con.prepareStatement("SELECT 1");
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() && rs.getInt(1) == 1;
+        } catch (SQLException e) {
+            logger.warn("Database health check failed: {}", e.getMessage());
+            return false;
         }
     }
 }
