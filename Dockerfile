@@ -16,7 +16,7 @@ RUN mvn package -DskipTests -pl task-planner-app -am
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-COPY --from=build /app/task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-dependencies.jar app.jar
+COPY --from=build /app/task-planner-app/target/task-planner-app-*-jar-with-dependencies.jar app.jar
 # Copy static assets from the build stage
 COPY --from=build /app/task-planner-app/target/classes/public ./public
 
