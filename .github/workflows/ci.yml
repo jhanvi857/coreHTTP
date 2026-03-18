@@ -10,6 +10,24 @@ on:
     - cron: '0 2 * * 1'
 
 jobs:
+  # PR Dependency Vulnerability Gate (No NVD API key required)
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review (fail on high/critical)
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
   # Build & Unit Tests 
   build-and-test:
     name: Build & Test
@@ -101,8 +119,8 @@ jobs:
     name: OWASP Dependency Check
     runs-on: ubuntu-latest
     needs: build-and-test
-    if: github.event_name != 'schedule'
-    timeout-minutes: 45
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -120,16 +138,30 @@ jobs:
         with:
           maven-version: 3.9.6
 
-      - name: Cache OWASP Dependency-Check data
+      - name: Cache OWASP Dependency-Check database
+        id: dependency-check-cache
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository/org/owasp
-          key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}
+          path: ~/.dependency-check-data
+          key: ${{ runner.os }}-dependency-check-db-v1-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-dependency-check-
+            ${{ runner.os }}-dependency-check-db-v1-
 
       - name: Run OWASP Dependency Check (CVSS >= 7 fails build)
-        run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -n "${NVD_API_KEY}" ]; then
+            mvn org.owasp:dependency-check-maven:check \
+              -DfailBuildOnCVSS=7 \
+              -DnvdApiKey="${NVD_API_KEY}" \
+              -DdataDirectory="$HOME/.dependency-check-data"
+          else
+            mvn org.owasp:dependency-check-maven:check \
+              -DfailBuildOnCVSS=7 \
+              -Dautoupdate=false \
+              -DdataDirectory="$HOME/.dependency-check-data"
+          fi
 
       - name: Upload dependency-check report
         if: always()
