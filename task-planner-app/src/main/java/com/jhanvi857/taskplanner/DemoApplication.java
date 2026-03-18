@@ -15,15 +15,20 @@ public class DemoApplication {
     private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
     public static void main(String[] args) {
+        boolean authDisabled = isTrue(System.getenv("NIOFLOW_DISABLE_AUTH"));
         String jwtSecret = System.getProperty("nioflow.jwtSecret");
         if (jwtSecret == null || jwtSecret.isBlank()) {
             jwtSecret = System.getenv("JWT_SECRET");
         }
-        if (jwtSecret == null || jwtSecret.length() < 32) {
+        if (!authDisabled && (jwtSecret == null || jwtSecret.length() < 32)) {
             LoggerFactory.getLogger(DemoApplication.class)
                 .error("JWT_SECRET must be set (min 32 characters). "
                      + "Set the JWT_SECRET environment variable and restart.");
             System.exit(1);
+        }
+
+        if (authDisabled) {
+            logger.warn("NIOFLOW_DISABLE_AUTH=true. Protected routes are running without JWT checks.");
         }
 
         NioFlowApp app = new NioFlowApp();
@@ -74,7 +79,9 @@ public class DemoApplication {
         });
 
         app.group("/api/tasks", tasks -> {
-            tasks.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
+            if (!authDisabled) {
+                tasks.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
+            }
             TaskController taskController = new TaskController();
             tasks.get("/", taskController::list);
             tasks.post("/", taskController::create);
@@ -83,9 +90,14 @@ public class DemoApplication {
         });
 
         app.group("/api/secure", secure -> {
-            secure.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
+            if (!authDisabled) {
+                secure.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
+            }
             secure.get("/", ctx -> {
                 String user = ctx.header("X-Auth-User");
+                if (user == null || user.isBlank()) {
+                    user = "anonymous";
+                }
                 ctx.status(HttpStatus.OK).json(java.util.Map.of("message", "Hello, " + user));
             });
         });
