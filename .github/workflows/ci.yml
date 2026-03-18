@@ -100,8 +100,8 @@ jobs:
   dependency-scan:
     name: OWASP Dependency Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
+    needs: build-and-test
+    if: github.event_name != 'schedule'
     timeout-minutes: 45
 
     steps:
@@ -128,7 +128,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependency-check-
 
-      - name: Run OWASP Dependency Check (CVSS ≥ 7 fails advisory)
+      - name: Run OWASP Dependency Check (CVSS >= 7 fails build)
         run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
 
       - name: Upload dependency-check report
