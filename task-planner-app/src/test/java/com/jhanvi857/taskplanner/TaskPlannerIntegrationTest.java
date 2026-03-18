@@ -71,12 +71,20 @@ public class TaskPlannerIntegrationTest {
 
     @Test
     @Order(3)
+    void readinessEndpoint_returns200_whenDbDisabled() throws Exception {
+        var resp = get("/_ready");
+        assertEquals(200, resp.statusCode(), "/_ready should return 200 when DB is disabled");
+        assertTrue(resp.body().contains("DISABLED"), "Expected DB disabled state in readiness response");
+    }
+
+    @Test
+    @Order(4)
     void taskList_withoutAuth_returns401() throws Exception {
         assertEquals(401, get("/api/tasks/").statusCode());
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void createTask_withoutAuth_returns401() throws Exception {
         var req = HttpRequest.newBuilder(uri("/api/tasks/"))
                 .POST(HttpRequest.BodyPublishers.ofString("{\"title\":\"test\"}"))
@@ -86,13 +94,13 @@ public class TaskPlannerIntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void getTaskById_withoutAuth_returns401() throws Exception {
         assertEquals(401, get("/api/tasks/1").statusCode());
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     void deleteTask_withoutAuth_returns401() throws Exception {
         var req = HttpRequest.newBuilder(uri("/api/tasks/1"))
                 .DELETE()
@@ -101,7 +109,7 @@ public class TaskPlannerIntegrationTest {
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     void taskList_withInvalidToken_returns401() throws Exception {
         var req = HttpRequest.newBuilder(uri("/api/tasks/"))
                 .GET()
@@ -111,7 +119,7 @@ public class TaskPlannerIntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     void taskList_withMalformedAuthHeader_returns401() throws Exception {
         var req = HttpRequest.newBuilder(uri("/api/tasks/"))
                 .GET()
@@ -122,19 +130,28 @@ public class TaskPlannerIntegrationTest {
 
 
     @Test
-    @Order(9)
+    @Order(10)
     void secureEndpoint_withoutAuth_returns401() throws Exception {
         assertEquals(401, get("/api/secure/").statusCode());
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void secureEndpoint_withInvalidToken_returns401() throws Exception {
         var req = HttpRequest.newBuilder(uri("/api/secure/"))
                 .GET()
                 .header("Authorization", "Bearer bad.token.value")
                 .build();
         assertEquals(401, HTTP.send(req, HttpResponse.BodyHandlers.ofString()).statusCode());
+    }
+
+    @Test
+    @Order(12)
+    void internalServerError_doesNotLeakExceptionMessage() throws Exception {
+        var resp = get("/boom");
+        assertEquals(500, resp.statusCode());
+        assertTrue(resp.body().contains("Internal Server Error"));
+        assertFalse(resp.body().contains("boom-message"));
     }
 
 
@@ -150,10 +167,16 @@ public class TaskPlannerIntegrationTest {
         testApp.use(new com.jhanvi857.nioflow.middleware.RateLimitMiddleware(1000, 10_000));
 
         testApp.register(new com.jhanvi857.nioflow.plugin.HealthCheckPlugin());
+        testApp.get("/_ready", ctx ->
+            ctx.status(HttpStatus.OK).json(java.util.Map.of("status", "UP", "database", "DISABLED"))
+        );
         testApp.get("/metrics", ctx ->
             ctx.status(HttpStatus.OK).send(
                 com.jhanvi857.nioflow.middleware.MetricsMiddleware.getMetricsReport())
         );
+        testApp.get("/boom", ctx -> {
+            throw new RuntimeException("boom-message");
+        });
 
         testApp.group("/api/tasks", tasks -> {
             tasks.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
