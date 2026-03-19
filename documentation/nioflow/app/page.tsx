@@ -34,7 +34,7 @@ export default function Home() {
                 <Link href="/docs" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-white text-black hover:bg-gray-200 transition-colors rounded-lg shadow-md">
                   Read Architecture Docs
                 </Link>
-                <Link href="https://github.com/jhanvi857/nioflow" target="_blank" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-transparent text-white border border-[#333] hover:bg-[#111] transition-colors rounded-lg">
+                <Link href="https://github.com/jhanvi857/coreHTTP" target="_blank" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-transparent text-white border border-[#333] hover:bg-[#111] transition-colors rounded-lg">
                   View Source Code
                 </Link>
               </div>
@@ -193,7 +193,7 @@ export default function Home() {
                 <Link href="/docs" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-white text-black hover:bg-gray-200 transition-colors rounded-lg shadow-md">
                   Read Technical Summary
                 </Link>
-                <Link href="https://github.com/jhanvi857/nioflow" target="_blank" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-transparent text-white border border-[#333] hover:bg-[#111] transition-colors rounded-lg">
+                <Link href="https://github.com/jhanvi857/coreHTTP" target="_blank" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-transparent text-white border border-[#333] hover:bg-[#111] transition-colors rounded-lg">
                   Star repository
                 </Link>
               </div>

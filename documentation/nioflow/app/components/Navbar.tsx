@@ -24,7 +24,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center pr-4 h-6">
             <Link
-              href="https://github.com/jhanvi857/nioflow"
+              href="https://github.com/jhanvi857/coreHTTP"
               target="_blank"
               rel="noreferrer"
               className="text-sm font-medium text-gray-500 transition-colors hover:text-white"

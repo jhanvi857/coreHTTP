@@ -17,9 +17,45 @@ export default function RoadmapPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Development Milestones</h1>
           <p className="max-w-3xl text-lg text-gray-400 leading-relaxed">
-            NioFlow is planned over three major phases. The following milestones represent the completed framework features and orchestration goals.
+            NioFlow evolved in three deliberate phases, each focused on a specific engineering concern: core execution,
+            framework ergonomics, and production safety. This roadmap explains not only what was built, but why each
+            phase matters for real-world teams.
           </p>
         </header>
+
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-14">
+          <article className="rounded-xl border border-[#202020] bg-[#101010] p-5">
+            <h2 className="text-base font-semibold tracking-tight mb-2">Execution Foundation</h2>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Built a non-blocking, selector-driven runtime to ensure concurrency and responsiveness under load.
+            </p>
+          </article>
+          <article className="rounded-xl border border-[#202020] bg-[#101010] p-5">
+            <h2 className="text-base font-semibold tracking-tight mb-2">Developer Experience</h2>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Added routing, middleware composition, and payload handling so product teams can ship APIs quickly.
+            </p>
+          </article>
+          <article className="rounded-xl border border-[#202020] bg-[#101010] p-5">
+            <h2 className="text-base font-semibold tracking-tight mb-2">Operational Confidence</h2>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Hardened error behavior, TLS support, graceful shutdown, and observability for production rollouts.
+            </p>
+          </article>
+        </section>
+
+        <section className="rounded-2xl border border-[#202020] bg-[#101010] p-6 md:p-8 mb-14">
+          <h2 className="text-2xl font-bold tracking-tight mb-4">How To Read This Roadmap</h2>
+          <p className="text-gray-400 leading-relaxed mb-4">
+            Each phase contains capabilities that were delivered together for architectural coherence. The sequence is
+            intentional: we first stabilized concurrency primitives, then built higher-level framework APIs, and then
+            finalized deployment and reliability behavior.
+          </p>
+          <p className="text-gray-400 leading-relaxed">
+            For teams adopting NioFlow, this means you can trust both sides of the stack: fast request handling and
+            operational safety characteristics expected in production environments.
+          </p>
+        </section>
 
         <section className="relative ml-4 md:ml-6 before:absolute before:-left-4 md:before:-left-6 before:top-8 before:bottom-0 before:w-px before:bg-[#222]">
           {roadmapMilestones.map((milestone, index) => {
@@ -54,10 +90,33 @@ export default function RoadmapPage() {
                       </li>
                     ))}
                   </ul>
+
+                  <div className="mt-6 border-t border-[#222] pt-5">
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      {index === 0 &&
+                        "Why this phase matters: The engine layer determines baseline scalability. By establishing a clear request model and controlled worker handoff early, NioFlow avoids hidden concurrency behavior later in application code."}
+                      {index === 1 &&
+                        "Why this phase matters: Framework-level abstractions reduce boilerplate and keep business logic focused. Middleware and routing guarantees make services easier to maintain as endpoint count grows."}
+                      {index === 2 &&
+                        "Why this phase matters: Production incidents are often operational, not functional. TLS, graceful shutdown, and centralized error handling dramatically improve deploy safety and recovery speed."}
+                    </p>
+                  </div>
                 </div>
               </article>
             );
           })}
+        </section>
+
+        <section className="rounded-2xl border border-[#202020] bg-[#101010] p-6 md:p-8 mt-8">
+          <h2 className="text-2xl font-bold tracking-tight mb-4">What Comes Next</h2>
+          <p className="text-gray-400 leading-relaxed mb-3">
+            Upcoming roadmap detail will move from phase-based outcomes to release-based tracking, so teams can map
+            specific framework improvements to version upgrades.
+          </p>
+          <p className="text-gray-400 leading-relaxed">
+            Planned additions include richer middleware extension points, enhanced diagnostics, and deeper deployment
+            templates for container-first and cloud-native workflows.
+          </p>
         </section>
       </main>
 
