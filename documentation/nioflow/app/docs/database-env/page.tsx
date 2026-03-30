@@ -47,11 +47,13 @@ export default function DatabaseEnvPage() {
 PORT=8080
 JWT_SECRET=your_super_secret_signing_key_at_least_32_chars
 
-# Database Configuration (Supabase/Postgres)
-NIOFLOW_ENABLE_DB=true
+# Postgres Configuration (Supabase)
 JDBC_URL=jdbc:postgresql://your-db-host.supabase.co:5432/postgres
 DB_USER=postgres
-DB_PASS=your_secure_database_password`}
+DB_PASS=your_secure_database_password
+
+# MongoDB Configuration (Atlas)
+MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/nioflow`}
         />
       </section>
 
@@ -61,28 +63,36 @@ DB_PASS=your_secure_database_password`}
           <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 font-bold border border-green-500/20">
             02
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Supabase Integration</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Built-in Persistence</h2>
         </div>
 
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          NioFlow uses **HikariCP** for high-performance connection pooling. By enabling database mode in your environment, the framework initializes a thread-safe data source optimized for PostgreSQL and Supabase.
+          NioFlow provides first-class support for both relational and document-based storage. You can initialize these directly on your application instance.
         </p>
 
         <CodeBlock 
           language="java"
-          title="DatabaseManager.java Usage"
-          code={`public class DataService {
-    public void listTasks() {
-        if (DatabaseManager.isEnabled()) {
-            try (Connection conn = DatabaseManager.getConnection()) {
-                // Perform your SQL queries here
-                // We recommend offloading these to an async executor
-            } catch (SQLException e) {
-                logger.error("Database error: {}", e.getMessage());
-            }
-        }
-    }
-}`}
+          title="App-style Initialization"
+          code={`NioFlowApp app = new NioFlowApp();
+
+// One-liner initialization from .env
+app.initPostgres(); 
+app.initMongo();
+
+app.listen(8080);`}
+        />
+
+        <CodeBlock 
+          language="java"
+          title="Accessing Connections"
+          code={`// Get a Postgres Connection (HikariCP)
+try (Connection conn = Database.getPostgresConnection()) {
+    // SQL Logic
+}
+
+// Get MongoDB Client
+MongoClient mongo = Database.getMongoClient();
+MongoDatabase db = mongo.getDatabase("production");`}
         />
 
         <WarningCallout title="Privacy & Security">
