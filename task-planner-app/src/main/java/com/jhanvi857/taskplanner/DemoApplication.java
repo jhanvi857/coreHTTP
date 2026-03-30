@@ -30,6 +30,11 @@ public class DemoApplication {
         }
 
         NioFlowApp app = new NioFlowApp();
+        app.initPostgres();
+        if (Env.get("MONGO_URI") != null) {
+            app.initMongo();
+        }
+        
         boolean exposeErrorDetails = Env.getAsBoolean("NIOFLOW_EXPOSE_ERROR_DETAILS", false);
 
         // 1. Global Middleware
