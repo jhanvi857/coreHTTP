@@ -1,5 +1,6 @@
 package com.jhanvi857.nioflow;
 
+import com.jhanvi857.nioflow.db.Database;
 import com.jhanvi857.nioflow.middleware.Middleware;
 import com.jhanvi857.nioflow.routing.RouteHandler;
 import com.jhanvi857.nioflow.routing.Router;
@@ -60,6 +61,22 @@ public class NioFlowApp {
         return exception(Exception.class, handler);
     }
 
+    /**
+     * Initializes PostgreSQL with environment variables (JDBC_URL, etc.)
+     */
+    public NioFlowApp initPostgres() {
+        Database.initPostgres();
+        return this;
+    }
+
+    /**
+     * Initializes MongoDB with environment variables (MONGO_URI)
+     */
+    public NioFlowApp initMongo() {
+        Database.initMongo();
+        return this;
+    }
+
     public void listen(int port) {
         this.activeServer = new HttpServer(port);
         this.activeServer.start(router);
@@ -88,5 +105,6 @@ public class NioFlowApp {
         if (this.activeServer != null) {
             this.activeServer.drainAndStop(timeout, unit);
         }
+        Database.shutdown();
     }
 }
