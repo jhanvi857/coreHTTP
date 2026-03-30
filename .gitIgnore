@@ -11,3 +11,6 @@ target/
 *.iml
 .vscode/
 .DS_Store
+.env
+.env.local
+.env.*.local

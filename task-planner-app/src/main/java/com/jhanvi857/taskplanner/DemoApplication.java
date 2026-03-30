@@ -1,5 +1,6 @@
 package com.jhanvi857.taskplanner;
 
+import com.jhanvi857.nioflow.Env;
 import com.jhanvi857.nioflow.NioFlowApp;
 import com.jhanvi857.nioflow.protocol.HttpStatus;
 import com.jhanvi857.taskplanner.controller.TaskController;
@@ -15,15 +16,12 @@ public class DemoApplication {
     private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
     public static void main(String[] args) {
-        boolean authDisabled = isTrue(System.getenv("NIOFLOW_DISABLE_AUTH"));
-        String jwtSecret = System.getProperty("nioflow.jwtSecret");
-        if (jwtSecret == null || jwtSecret.isBlank()) {
-            jwtSecret = System.getenv("JWT_SECRET");
-        }
+        boolean authDisabled = Env.getAsBoolean("NIOFLOW_DISABLE_AUTH", false);
+        String jwtSecret = Env.get("JWT_SECRET", Env.get("nioflow.jwtSecret"));
+        
         if (!authDisabled && (jwtSecret == null || jwtSecret.length() < 32)) {
-            LoggerFactory.getLogger(DemoApplication.class)
-                .error("JWT_SECRET must be set (min 32 characters). "
-                     + "Set the JWT_SECRET environment variable and restart.");
+            logger.error("JWT_SECRET must be set (min 32 characters). "
+                     + "Set the JWT_SECRET in your .env file or environment variable.");
             System.exit(1);
         }
 
@@ -32,28 +30,19 @@ public class DemoApplication {
         }
 
         NioFlowApp app = new NioFlowApp();
-        boolean exposeErrorDetails = isTrue(System.getenv("NIOFLOW_EXPOSE_ERROR_DETAILS"));
+        boolean exposeErrorDetails = Env.getAsBoolean("NIOFLOW_EXPOSE_ERROR_DETAILS", false);
 
         // 1. Global Middleware
         app.use(new com.jhanvi857.nioflow.middleware.LoggerMiddleware());
         // configurable cors origin. Default to localhost for dev safety.
-        String corsOrigin = System.getenv("NIOFLOW_CORS_ORIGIN");
-        if (corsOrigin == null || corsOrigin.isBlank()) {
-            corsOrigin = "http://localhost:3000";
-        }
+        String corsOrigin = Env.get("NIOFLOW_CORS_ORIGIN", "http://localhost:3000");
         app.use(new com.jhanvi857.nioflow.middleware.CorsMiddleware(corsOrigin));
         app.use(new com.jhanvi857.nioflow.middleware.MetricsMiddleware());
         // Simple Rate Limit: 100 requests per 10 seconds locally
         app.use(new com.jhanvi857.nioflow.middleware.RateLimitMiddleware(100, 10000));
 
         // 2. Resolving static assets
-        String staticDir = System.getProperty("nioflow.staticDir");
-        if (staticDir == null || staticDir.isBlank()) {
-            staticDir = System.getenv("NIOFLOW_STATIC_DIR");
-        }
-        if (staticDir == null || staticDir.isBlank()) {
-            staticDir = resolveDefaultStaticDir();
-        }
+        String staticDir = Env.get("nioflow.staticDir", Env.get("NIOFLOW_STATIC_DIR", resolveDefaultStaticDir()));
         logger.info("Serving static assets from: {}", staticDir);
 
         // 4. Observability Routes
@@ -132,39 +121,23 @@ public class DemoApplication {
             app.drainAndStop(30, java.util.concurrent.TimeUnit.SECONDS);
         }));
 
-        String tlsEnabled = System.getenv("NIOFLOW_TLS_ENABLED");
-        if (isTrue(tlsEnabled)) {
-            String keystorePath = System.getenv("NIOFLOW_TLS_KEYSTORE_PATH");
-            String keystorePassword = System.getenv("NIOFLOW_TLS_KEYSTORE_PASSWORD");
+        boolean tlsEnabled = Env.getAsBoolean("NIOFLOW_TLS_ENABLED", false);
+        if (tlsEnabled) {
+            String keystorePath = Env.get("NIOFLOW_TLS_KEYSTORE_PATH");
+            String keystorePassword = Env.get("NIOFLOW_TLS_KEYSTORE_PASSWORD");
 
             if (keystorePath == null || keystorePath.isBlank() || keystorePassword == null || keystorePassword.isBlank()) {
                 throw new IllegalStateException(
                         "NIOFLOW_TLS_ENABLED=true requires NIOFLOW_TLS_KEYSTORE_PATH and NIOFLOW_TLS_KEYSTORE_PASSWORD.");
             }
 
-            int tlsPort = readPort("NIOFLOW_TLS_PORT", 8443);
+            int tlsPort = Env.getAsInt("NIOFLOW_TLS_PORT", 8443);
             logger.info("Starting TLS listener on port {} using keystore {}", tlsPort, keystorePath);
             app.listenSecure(tlsPort, keystorePath, keystorePassword);
             return;
         }
 
-        app.listen(readPort("PORT", 8080));
-    }
-
-    private static boolean isTrue(String value) {
-        return value != null && "true".equalsIgnoreCase(value.trim());
-    }
-
-    private static int readPort(String envKey, int defaultPort) {
-        String value = System.getenv(envKey);
-        if (value == null || value.isBlank()) {
-            return defaultPort;
-        }
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ignored) {
-            return defaultPort;
-        }
+        app.listen(Env.getAsInt("PORT", 8080));
     }
 
     private static String resolveDefaultStaticDir() {

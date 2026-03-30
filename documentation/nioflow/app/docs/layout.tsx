@@ -30,6 +30,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                 <SidebarLink href="/docs/getting-started">Getting Started</SidebarLink>
                 <SidebarLink href="/docs/routing-frontend">Routing + Frontend</SidebarLink>
                 <SidebarLink href="/docs/auth-security">Auth + Security</SidebarLink>
+                <SidebarLink href="/docs/database-env">Database + Env</SidebarLink>
                 <SidebarLink href="/docs/deployment">Operations + Deployment</SidebarLink>
                 <SidebarLink href="/docs/reference">API Reference</SidebarLink>
               </ul>

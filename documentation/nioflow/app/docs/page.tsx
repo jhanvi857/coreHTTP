@@ -46,13 +46,18 @@ export default function DocsHomePage() {
           description="Implement signup/login, generate JWT tokens, protect route groups, and set security baselines."
         />
         <SectionCard
+          href="/docs/database-env"
+          title="4. Database + Env"
+          description="Orchestrate secrets with .env files, connect to Supabase/Postgres, and manage connection pools."
+        />
+        <SectionCard
           href="/docs/deployment"
-          title="4. Operations + Deployment"
+          title="5. Operations + Deployment"
           description="Operational readiness, deploy strategy, probes, incident basics, and release delivery workflow."
         />
         <SectionCard
           href="/docs/reference"
-          title="5. Reference"
+          title="6. Reference"
           description="Configuration matrix, endpoint reference, starter zip endpoint design, and troubleshooting."
         />
       </div>

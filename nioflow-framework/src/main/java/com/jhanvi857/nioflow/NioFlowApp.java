@@ -38,7 +38,8 @@ public class NioFlowApp {
         return this;
     }
 
-    public NioFlowApp group(String prefix, java.util.function.Consumer<com.jhanvi857.nioflow.routing.RouteGroup> config) {
+    public NioFlowApp group(String prefix,
+            java.util.function.Consumer<com.jhanvi857.nioflow.routing.RouteGroup> config) {
         com.jhanvi857.nioflow.routing.RouteGroup group = new com.jhanvi857.nioflow.routing.RouteGroup(prefix, router);
         config.accept(group);
         return this;
@@ -70,7 +71,8 @@ public class NioFlowApp {
             try (java.io.InputStream is = new java.io.FileInputStream(keystorePath)) {
                 ks.load(is, password.toCharArray());
             }
-            javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory.getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+            javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory
+                    .getInstance(javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ks, password.toCharArray());
             javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS");
             sslContext.init(kmf.getKeyManagers(), null, null);
