@@ -296,9 +296,38 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 | `JDBC_URL` | If DB enabled | `jdbc:postgresql://localhost:5432/nioflow` | PostgreSQL URL (supports .env) |
 | `DB_USER` | If DB enabled | `postgres` | DB user (supports .env) |
 | `DB_PASS` | If DB enabled | None | DB password (supports .env) |
+| `MONGO_URI` | If Mongo enabled | None | MongoDB Connection URI (supports .env) |
 | `PORT` | No | `8080` | Server port (supports .env) |
 | `JWT_SECRET` | Yes (auth) | None | JWT secret key (supports .env) |
-| `NIOFLOW_ENABLE_DB` | No | `false` | Enable/disable DB integration (supports .env) |
+| `NIOFLOW_ENABLE_DB` | No | `false` | Enable/disable DB integration (supports .env)|
+
+---
+
+## Database Integration
+
+NioFlow provides a centralized `Database` utility to manage your persistence layers with zero boilerplate.
+
+### 1. PostgreSQL (Supabase / Local)
+Initialize and get connections directly:
+```java
+NioFlowApp app = new NioFlowApp();
+// Reads JDBC_URL from .env
+app.initPostgres(); 
+
+try (Connection conn = Database.getPostgresConnection()) {
+    // Standard JDBC logic
+}
+```
+
+### 2. MongoDB (Atlas / Local)
+Initialize and access the document store:
+```java
+// Reads MONGO_URI from .env
+app.initMongo(); 
+
+MongoClient mongo = Database.getMongoClient();
+MongoDatabase db = mongo.getDatabase("nioflow");
+```
 | `NIOFLOW_THREADS` / `nioflow.threads` | No | `10` | Worker pool size |
 | `NIOFLOW_QUEUE_CAPACITY` / `nioflow.queueCapacity` | No | `100` | Worker queue backpressure limit |
 | `NIOFLOW_SOCKET_TIMEOUT_MS` / `nioflow.socketTimeoutMs` | No | `15000` | Read timeout per socket |
