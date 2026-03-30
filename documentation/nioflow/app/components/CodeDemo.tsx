@@ -4,6 +4,7 @@ import { useState } from "react";
 
 const CODE_SNIPPET = `public class ServerApp {
     public static void main(String[] args) {
+        // Automatically loads .env file using io.github.cdimascio:dotenv-java
         NioFlowApp app = new NioFlowApp();
 
         // Middleware Stack
@@ -21,8 +22,9 @@ const CODE_SNIPPET = `public class ServerApp {
             app.drainAndStop(30, TimeUnit.SECONDS);
         }));
 
-        // Native TLS Integration
-        app.listenSecure(443, "keystore.jks", "password");
+        // Native TLS & Environment config
+        int port = Env.getAsInt("PORT", 8080);
+        app.listen(port);
     }
 }`;
 

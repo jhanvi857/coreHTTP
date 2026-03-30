@@ -77,3 +77,32 @@ export const SectionCard = ({ href, title, description }: { href: string; title:
     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{description}</p>
   </Link>
 );
+
+export const InfoCallout = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="my-6 flex items-start space-x-4 rounded-xl border border-blue-200 bg-blue-50/50 p-6 dark:border-blue-500/20 dark:bg-blue-500/5">
+    <div className="mt-1 flex-shrink-0">
+      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
+        <span className="text-xs font-bold font-mono">i</span>
+      </div>
+    </div>
+    <div className="flex-1 space-y-2">
+      <h4 className="font-bold text-blue-900 dark:text-blue-400">{title}</h4>
+      <div className="text-[14px] text-blue-800/80 dark:text-blue-300/80 leading-relaxed">{children}</div>
+    </div>
+  </div>
+);
+
+export const WarningCallout = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="my-6 flex items-start space-x-4 rounded-xl border border-pink-200 bg-pink-50/50 p-6 dark:border-pink-500/20 dark:bg-pink-500/5">
+    <div className="mt-1 flex-shrink-0">
+      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-white font-bold font-mono text-xs">
+        !
+      </div>
+    </div>
+    <div className="flex-1 space-y-2">
+      <h4 className="font-bold text-pink-900 dark:text-pink-400">{title}</h4>
+      <div className="text-[14px] text-pink-800/80 dark:text-pink-300/80 leading-relaxed">{children}</div>
+    </div>
+  </div>
+);
+

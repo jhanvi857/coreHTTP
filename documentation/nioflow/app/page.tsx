@@ -150,6 +150,17 @@ export default function Home() {
                   Built for containerized environments. Using <code>drainAndStop()</code>, NioFlow safely completes all active TCP requests before permitting SIGTERM termination.
                 </p>
               </div>
+
+              {/* Feature 7 - NEW */}
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  ENV
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Environment Management</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Automatic <code>.env</code> file detection. Keep your Supabase keys and JWT secrets safe by loading them into the framework without manual command line arguments.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -186,7 +197,7 @@ export default function Home() {
               </h2>
 
               <p className="text-lg text-gray-400 mb-10 leading-relaxed text-balance">
-                The framework avoids reflection and hidden dependency injection containers. All route logic, exception handling, and middleware flows are wired manually, ensuring completely predictable code execution.
+                The framework avoids reflection and hidden dependency injection containers. Authored by <strong>Jhanvi Patel</strong>, NioFlow ensures all dependencies and middleware flows are explicit and predictable.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -224,9 +235,14 @@ export default function Home() {
                     <span className="text-gray-500">Cryptography</span>
                     <span className="text-gray-300">BCrypt / JWT</span>
                   </div>
-                  <div className="pt-4 mt-2 border-t border-[#333] flex justify-between items-center text-blue-400 font-semibold">
-                    <span>License</span>
-                    <span>MIT</span>
+                  <div className="pt-4 mt-2 border-t border-[#333] flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-blue-400 font-semibold">
+                      <span>License</span>
+                      <span>MIT</span>
+                    </div>
+                    <div className="text-[11px] text-gray-600 leading-tight">
+                      * Uses <strong>dotenv-java</strong> (Apache 2.0) by <strong>io.github.cdimascio</strong> for environment orchestration.
+                    </div>
                   </div>
                 </div>
               </div>

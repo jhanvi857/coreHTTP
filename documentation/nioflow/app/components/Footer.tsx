@@ -49,7 +49,7 @@ export default function Footer() {
 
         <div className="pt-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center border-t border-muted">
           <p className="text-gray-500 dark:text-gray-400">
-            &copy; {new Date().getFullYear()} NioFlow. Open source under MIT.
+            &copy; {new Date().getFullYear()} NioFlow by **Jhanvi Patel**. Open source under MIT.
           </p>
           <div className="flex items-center gap-2 group">
             <span className="flex h-2 w-2 rounded-full bg-green-500" />
