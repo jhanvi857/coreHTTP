@@ -1,5 +1,6 @@
 package com.jhanvi857.taskplanner.db;
 
+import com.jhanvi857.nioflow.Env;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
@@ -14,44 +15,25 @@ public class DatabaseManager {
     private static HikariDataSource dataSource;
 
     public static boolean isEnabled() {
-        String enabled = System.getProperty("nioflow.enableDB");
-        if (enabled == null || enabled.isBlank()) {
-            enabled = System.getenv("NIOFLOW_ENABLE_DB");
-        }
-        return "true".equalsIgnoreCase(enabled);
+        return Env.getAsBoolean("NIOFLOW_ENABLE_DB", false)
+                || Env.getAsBoolean("nioflow.enableDB", false);
     }
 
     static {
         if (!isEnabled()) {
             logger.info(
-                    "Database is disabled by default. Set NIOFLOW_ENABLE_DB=true or -Dnioflow.enableDB=true to enable.");
+                    "Database is disabled by default. Set NIOFLOW_ENABLE_DB=true or -Dnioflow.enableDB=true to enable via .env or JVM options.");
         } else {
             try {
                 HikariConfig config = new HikariConfig();
+                String jdbcUrl = Env.get("JDBC_URL",
+                        Env.get("nioflow.jdbcUrl", "jdbc:postgresql://localhost:5432/nioflow"));
+                String user = Env.get("DB_USER", Env.get("nioflow.dbUser", "postgres"));
+                String pass = Env.get("DB_PASS", Env.get("nioflow.dbPass"));
 
-                // Env-based configuration
-                String jdbcUrl = System.getProperty("nioflow.jdbcUrl");
-                if (jdbcUrl == null || jdbcUrl.isBlank()) {
-                    jdbcUrl = System.getenv("JDBC_URL");
-                }
-                if (jdbcUrl == null || jdbcUrl.isBlank()) {
-                    jdbcUrl = "jdbc:postgresql://localhost:5432/nioflow";
-                }
-
-                String user = System.getProperty("nioflow.dbUser");
-                if (user == null || user.isBlank()) {
-                    user = System.getenv("DB_USER");
-                }
-                if (user == null || user.isBlank()) {
-                    user = "postgres";
-                }
-
-                String pass = System.getProperty("nioflow.dbPass");
                 if (pass == null || pass.isBlank()) {
-                    pass = System.getenv("DB_PASS");
-                }
-                if (pass == null || pass.isBlank()) {
-                    logger.error("DB_PASS environment variable is required when database is enabled.");
+                    logger.error(
+                            "DB_PASS (or nioflow.dbPass) is required when database is enabled. Please provide it via .env file or environment variable.");
                     throw new IllegalStateException("DB_PASS not configured.");
                 }
 
