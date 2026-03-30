@@ -293,21 +293,36 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 
 | Variable / Property | Required | Default | Purpose |
 |:---|:---|:---|:---|
-| `JWT_SECRET` / `nioflow.jwtSecret` | Yes (protected routes) | None | JWT signing and validation key |
+| `JDBC_URL` | If DB enabled | `jdbc:postgresql://localhost:5432/nioflow` | PostgreSQL URL (supports .env) |
+| `DB_USER` | If DB enabled | `postgres` | DB user (supports .env) |
+| `DB_PASS` | If DB enabled | None | DB password (supports .env) |
+| `PORT` | No | `8080` | Server port (supports .env) |
+| `JWT_SECRET` | Yes (auth) | None | JWT secret key (supports .env) |
+| `NIOFLOW_ENABLE_DB` | No | `false` | Enable/disable DB integration (supports .env) |
 | `NIOFLOW_THREADS` / `nioflow.threads` | No | `10` | Worker pool size |
 | `NIOFLOW_QUEUE_CAPACITY` / `nioflow.queueCapacity` | No | `100` | Worker queue backpressure limit |
 | `NIOFLOW_SOCKET_TIMEOUT_MS` / `nioflow.socketTimeoutMs` | No | `15000` | Read timeout per socket |
-| `NIOFLOW_ENABLE_DB` / `nioflow.enableDB` | No | `false` | Enable/disable DB integration |
-| `JDBC_URL` | If DB enabled | `jdbc:postgresql://localhost:5432/nioflow` | PostgreSQL URL |
-| `DB_USER` | If DB enabled | `postgres` | DB user |
-| `DB_PASS` | If DB enabled | None | DB password |
-| `NIOFLOW_CORS_ORIGIN` | Recommended | `http://localhost:3000` in app | Allowed CORS origin |
 | `NIOFLOW_TLS_ENABLED` | No | `false` | Enable native TLS listener |
 | `NIOFLOW_TLS_KEYSTORE_PATH` | If TLS enabled | None | JKS keystore path for TLS |
 | `NIOFLOW_TLS_KEYSTORE_PASSWORD` | If TLS enabled | None | Keystore password |
 | `NIOFLOW_TLS_PORT` | No | `8443` | Port used by native TLS listener |
 | `NIOFLOW_EXPOSE_ERROR_DETAILS` | No | `false` | Include exception details in JSON error payloads |
 | `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static assets directory |
+
+---
+
+## Environment Variable Management
+
+NioFlow includes a built-in `Env` utility that automatically loads configuration from a `.env` file in your project root. This ensures that sensitive keys (like Supabase secrets) remain safe and are not passed via command line arguments.
+
+**Example `.env` file:**
+```env
+JDBC_URL=jdbc:postgresql://your-db.supabase.co:5432/postgres
+DB_USER=postgres
+DB_PASS=your-password
+JWT_SECRET=your-32-char-secret
+PORT=8080
+```
 
 ---
 
@@ -327,12 +342,10 @@ task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-dependencies.jar
 
 ### Run as Plain JVM Service (non-Docker)
 
+With the new `.env` support, you no longer need complex `-D` flags:
+
 ```bash
-java \
-  -Dnioflow.jwtSecret=your-very-long-secret-at-least-32-chars \
-  -Dnioflow.threads=20 \
-  -Dnioflow.queueCapacity=200 \
-  -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 ### Production Checklist
@@ -386,6 +399,16 @@ java \
 
 ---
 
+## Credits & Attribution
+
+This project is authored and maintained by **Jhanvi Patel** (jhanvi857). 
+
+### Dependencies & Third-Party Code
+- **Environment Management**: Powered by [dotenv-java](https://github.com/cdimascio/dotenv-java) by **io.github.cdimascio**. Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). 
+- **Networking**: Core architectural patterns for the NIO engine were derived from industry-standard high-performance Java server implementations. We honor all original authors and adhere to open-source compliance.
+
+---
+
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
