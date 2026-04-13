@@ -10,8 +10,8 @@ export default function AuthSecurityPage() {
       <CodeBlock
         title="auth-routes"
         language="java"
-        code={`import com.jhanvi857.nioflow.auth.PasswordHasher;
-import com.jhanvi857.nioflow.auth.JwtProvider;
+        code={`import io.github.jhanvi857.nioflow.auth.PasswordHasher;
+import io.github.jhanvi857.nioflow.auth.JwtProvider;
 
 app.post("/api/auth/signup", ctx -> {
     SignupRequest req = ctx.body(SignupRequest.class);
@@ -37,7 +37,7 @@ app.post("/api/auth/login", ctx -> {
         title="protected-routes"
         language="java"
         code={`app.group("/api/tasks", tasks -> {
-    tasks.use(new com.jhanvi857.nioflow.middleware.AuthMiddleware());
+    tasks.use(new io.github.jhanvi857.nioflow.middleware.AuthMiddleware());
 
     tasks.get("/", taskController::list);
     tasks.post("/", taskController::create);

@@ -118,7 +118,7 @@ Windows PowerShell alternative:
 
 ```bash
 ./mvnw exec:java -pl task-planner-app \
-   -Dexec.mainClass=com.jhanvi857.taskplanner.DemoApplication \
+   -Dexec.mainClass=io.github.jhanvi857.taskplanner.DemoApplication \
    -Dnioflow.jwtSecret=replace-with-long-secret
 ```
 

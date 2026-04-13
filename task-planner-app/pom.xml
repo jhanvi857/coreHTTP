@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.jhanvi857</groupId>
+        <groupId>io.github.jhanvi857</groupId>
         <artifactId>nioflow-parent</artifactId>
         <version>1.0.0</version>
     </parent>
@@ -17,7 +17,7 @@
     <dependencies>
         <!-- Framework dependency -->
         <dependency>
-            <groupId>com.jhanvi857</groupId>
+            <groupId>io.github.jhanvi857</groupId>
             <artifactId>nioflow-framework</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -62,7 +62,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.jhanvi857.taskplanner.DemoApplication</mainClass>
+                            <mainClass>io.github.jhanvi857.taskplanner.DemoApplication</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

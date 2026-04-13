@@ -16,7 +16,7 @@ try {
     }
 
     Write-Host "Starting Task Planner App (Demo)..." -ForegroundColor Green
-    & $MvnScript -pl task-planner-app exec:java -D"exec.mainClass"="com.jhanvi857.taskplanner.DemoApplication"
+    & $MvnScript -pl task-planner-app exec:java -D"exec.mainClass"="io.github.jhanvi857.taskplanner.DemoApplication"
 }
 finally {
     # Always return to the original directory

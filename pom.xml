@@ -3,13 +3,36 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.jhanvi857</groupId>
+    <groupId>io.github.jhanvi857</groupId>
     <artifactId>nioflow-parent</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <name>NioFlow Parent</name>
     <description>A lightweight Java Micro-Framework and Web Server</description>
+    <url>https://github.com/jhanvi857/coreHTTP</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>jhanvi857</id>
+            <name>Jhanvi</name>
+            <email>jhanvi857@github.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/jhanvi857/coreHTTP.git</connection>
+        <developerConnection>scm:git:ssh://github.com:jhanvi857/coreHTTP.git</developerConnection>
+        <url>http://github.com/jhanvi857/coreHTTP/tree/main</url>
+    </scm>
+
 
     <modules>
         <module>nioflow-framework</module>
@@ -26,7 +49,7 @@
         <dependencies>
             <!-- Core Framework -->
             <dependency>
-                <groupId>com.jhanvi857</groupId>
+                <groupId>io.github.jhanvi857</groupId>
                 <artifactId>nioflow-framework</artifactId>
                 <version>${project.version}</version>
             </dependency>

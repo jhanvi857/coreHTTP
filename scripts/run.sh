@@ -9,4 +9,4 @@ echo "Building project with Maven..."
 mvn clean compile -q
 
 echo "Starting Task Planner App (Demo)..."
-mvn -pl task-planner-app exec:java -Dexec.mainClass="com.jhanvi857.taskplanner.DemoApplication"
+mvn -pl task-planner-app exec:java -Dexec.mainClass="io.github.jhanvi857.taskplanner.DemoApplication"

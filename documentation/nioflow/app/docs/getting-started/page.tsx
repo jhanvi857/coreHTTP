@@ -13,7 +13,7 @@ export default function GettingStartedPage() {
         title="pom.xml"
         language="xml"
         code={`<dependency>
-  <groupId>com.jhanvi857</groupId>
+  <groupId>io.github.jhanvi857</groupId>
   <artifactId>nioflow-framework</artifactId>
   <version>1.0.0</version>
 </dependency>`}
@@ -37,8 +37,8 @@ java -cp .\\nioflow-framework-1.0.0.jar;. App`}
       <CodeBlock
         title="App.java"
         language="java"
-        code={`import com.jhanvi857.nioflow.NioFlowApp;
-import com.jhanvi857.nioflow.protocol.HttpStatus;
+        code={`import io.github.jhanvi857.nioflow.NioFlowApp;
+import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 
 public class App {
     public static void main(String[] args) {
