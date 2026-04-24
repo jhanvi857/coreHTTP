@@ -24,30 +24,31 @@ export type Milestone = {
 
 export const features: Feature[] = [
   {
-    title: "NIO Event Loop",
-    description: "Highly scalable, non-blocking I/O using Java's Selector API for thousands of connections.",
+    title: "Hybrid NIO Runtime",
+    description: "Selector-based accept loop with bounded worker pool processing for predictable load behavior.",
   },
   {
     title: "JWT Authentication",
     description: "Built-in stateless authentication with secure password hashing via BCrypt.",
   },
   {
-    title: "SQL Persistence",
-    description: "Native PostgreSQL support with HikariCP connection pooling and schema migrations.",
+    title: "PostgreSQL + Optional Mongo",
+    description: "Built-in Postgres initialization and optional Mongo support through environment-driven setup.",
   },
   {
-    title: "Middleware Engine",
-    description: "Chain-of-responsibility pattern for logging, CORS, rate limiting, and observability.",
+    title: "Middleware + Plugins",
+    description: "Ordered middleware plus plugin registration for health checks and static file serving.",
   },
 ];
 
 export const endpoints: Endpoint[] = [
-  { method: "GET", path: "/", purpose: "Serve static assets" },
+  { method: "GET", path: "/", purpose: "Serve static assets index" },
   { method: "GET", path: "/_health", purpose: "Component health status" },
+  { method: "GET", path: "/_ready", purpose: "Dependency-aware readiness status" },
   { method: "GET", path: "/metrics", purpose: "Prometheus observability data" },
-  { method: "GET", path: "/api/tasks", purpose: "List all tasks" },
-  { method: "POST", path: "/api/tasks", purpose: "Create a new task" },
-  { method: "DELETE", path: "/api/tasks/{id}", purpose: "Remove a task" },
+  { method: "GET", path: "/api/tasks/", purpose: "List tasks (protected by auth by default)" },
+  { method: "POST", path: "/api/tasks/", purpose: "Create a task" },
+  { method: "DELETE", path: "/api/tasks/:id", purpose: "Delete a task" },
 ];
 
 export const configRows: ConfigRow[] = [
@@ -59,7 +60,7 @@ export const configRows: ConfigRow[] = [
   },
   {
     purpose: "JDBC Connection URL",
-    jvmProperty: "jdbc.url",
+    jvmProperty: "-",
     envVar: "JDBC_URL",
     defaultValue: "jdbc:postgresql://localhost:5432/nioflow",
   },
@@ -67,13 +68,13 @@ export const configRows: ConfigRow[] = [
     purpose: "Worker threads",
     jvmProperty: "nioflow.threads",
     envVar: "NIOFLOW_THREADS",
-    defaultValue: "10",
+    defaultValue: "64",
   },
   {
-    purpose: "Rate Limit Count",
-    jvmProperty: "ratelimit.max",
-    envVar: "RATE_LIMIT_MAX",
-    defaultValue: "100",
+    purpose: "Worker queue capacity",
+    jvmProperty: "nioflow.queueCapacity",
+    envVar: "NIOFLOW_QUEUE_CAPACITY",
+    defaultValue: "1000",
   },
 ];
 

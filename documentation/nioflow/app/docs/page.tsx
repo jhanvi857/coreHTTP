@@ -88,12 +88,26 @@ export default function DocsHomePage() {
 
       <section className="rounded-2xl border border-muted bg-surface p-6 md:p-8 mb-4">
         <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">Architecture At A Glance</h2>
+        <div className="mb-5 rounded-xl border border-muted bg-[#0e0e11] p-4 md:p-5 overflow-x-auto">
+          <pre className="text-xs md:text-sm text-gray-200 leading-relaxed">
+{`Client
+  -> Selector accept loop
+  -> Accepted SocketChannel (blocking mode for parser)
+  -> Bounded worker pool
+  -> HttpParser
+  -> Router
+  -> Middleware chain
+  -> Handler / Plugin
+  -> HttpResponse
+  -> Client`}
+          </pre>
+        </div>
         <ol className="list-decimal pl-6 space-y-3 text-gray-600 dark:text-gray-400 leading-relaxed">
           <li>
-            Requests are accepted by the NIO event loop and mapped through declarative routing.
+            Requests are accepted by the NIO selector loop and then processed on bounded workers.
           </li>
           <li>
-            Middleware executes in order for auth, rate-limit, logging, observability, and policy controls.
+            Middleware executes in registration order for logging, CORS, metrics, rate limiting, and auth.
           </li>
           <li>
             Handlers operate on a typed HTTP context and return JSON/text with explicit status control.

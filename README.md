@@ -18,6 +18,7 @@ NioFlow is designed around one principle: make HTTP internals understandable wit
 - [What NioFlow Is](#what-nioflow-is)
 - [Key Capabilities](#key-capabilities)
 - [Quick Start](#quick-start)
+- [Documentation Site](#documentation-site)
 - [Framework Programming Model](#framework-programming-model)
 - [Architecture Deep Dive](#architecture-deep-dive)
 - [Security Model](#security-model)
@@ -105,6 +106,26 @@ Runtime.getRuntime().addShutdownHook(
 - JDK 17+
 - Maven 3.9+
 
+### 0. Configure environment
+
+Create a local `.env` from the example and set a strong JWT secret:
+
+```bash
+cp .env.example .env
+```
+
+Windows PowerShell alternative:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+At minimum, set:
+
+- `JWT_SECRET` (32+ characters)
+- `NIOFLOW_CORS_ORIGIN` (frontend origin)
+- `DB_PASS` (if `NIOFLOW_ENABLE_DB=true`)
+
 ### 1. Build all modules
 
 ```bash
@@ -141,6 +162,26 @@ Expected behavior:
 - `/_ready` returns `200` when dependencies are ready (`503` if DB mode is enabled but DB is unavailable).
 - `/metrics` returns `200` with metrics report.
 - `/api/tasks/` returns `401` without bearer token.
+
+---
+
+## Documentation Site
+
+The repository also includes a dedicated Next.js documentation portal in:
+
+```text
+documentation/nioflow
+```
+
+Run it locally:
+
+```bash
+cd documentation/nioflow
+npm install
+npm run dev
+```
+
+Then open `http://localhost:3000`.
 
 ---
 
@@ -209,18 +250,20 @@ public CompletableFuture<Optional<Task>> findById(Long id) {
 
 ```mermaid
 graph TD
-    C[Client] --> S[Selector Loop]
-    S --> A[Accept Connection]
-    A --> P[Bounded Worker Pool]
-    P --> HP[HttpParser]
-    HP --> R[Router]
-    R --> MW[Middleware Chain]
+    C[Client] --> SEL[Selector Accept Loop]
+    SEL --> ACC[Accept SocketChannel]
+    ACC --> BLK[Configure blocking mode for worker parsing]
+    BLK --> WP[Bounded Worker Pool]
+    WP --> HP[HttpParser]
+    HP --> RT[Router]
+    RT --> MW[Global plus Group Middleware]
     MW --> H[Route Handler]
-    H --> RES[HttpResponse]
-    RES --> C
+    H --> RESP[HttpResponse]
+    RESP --> C
 
-    H --> DB[(PostgreSQL)]
-    H --> FS[Static Files]
+    H --> DB[(PostgreSQL or Mongo optional)]
+    RT --> PLG[Plugins: HealthCheck and StaticFiles]
+    PLG --> FS[StaticFileHandler and FileHttpResponse]
 ```
 
 ---
@@ -295,13 +338,24 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 
 | Variable / Property | Required | Default | Purpose |
 |:---|:---|:---|:---|
-| `JDBC_URL` | If DB enabled | `jdbc:postgresql://localhost:5432/nioflow` | PostgreSQL URL (supports .env) |
-| `DB_USER` | If DB enabled | `postgres` | DB user (supports .env) |
-| `DB_PASS` | If DB enabled | None | DB password (supports .env) |
-| `MONGO_URI` | If Mongo enabled | None | MongoDB Connection URI (supports .env) |
-| `PORT` | No | `8080` | Server port (supports .env) |
-| `JWT_SECRET` | Yes (auth) | None | JWT secret key (supports .env) |
-| `NIOFLOW_ENABLE_DB` | No | `false` | Enable/disable DB integration (supports .env)|
+| `PORT` | No | `8080` | Server port |
+| `JWT_SECRET` | Yes unless auth disabled | None | JWT secret used by `AuthMiddleware` |
+| `NIOFLOW_DISABLE_AUTH` | No | `false` | Disable JWT checks for protected groups (dev only) |
+| `NIOFLOW_CORS_ORIGIN` | Recommended | `http://localhost:3000` | CORS allow-origin value |
+| `NIOFLOW_ENABLE_DB` | No | `false` | Enables DB-backed readiness checks and repository behavior |
+| `JDBC_URL` | If DB enabled | `jdbc:postgresql://localhost:5432/nioflow` | PostgreSQL URL |
+| `DB_USER` | If DB enabled | `postgres` | PostgreSQL user |
+| `DB_PASS` | If DB enabled | None | PostgreSQL password |
+| `MONGO_URI` | No | None | Optional MongoDB URI (enables `initMongo`) |
+| `NIOFLOW_THREADS` / `nioflow.threads` | No | `64` | Worker pool size in `HttpServer` |
+| `NIOFLOW_QUEUE_CAPACITY` / `nioflow.queueCapacity` | No | `1000` | Worker queue capacity for backpressure |
+| `NIOFLOW_SOCKET_TIMEOUT_MS` / `nioflow.socketTimeoutMs` | No | `30000` | Socket read timeout per connection |
+| `NIOFLOW_TLS_ENABLED` | No | `false` | Enable native TLS listener |
+| `NIOFLOW_TLS_KEYSTORE_PATH` | If TLS enabled | None | JKS keystore path |
+| `NIOFLOW_TLS_KEYSTORE_PASSWORD` | If TLS enabled | None | Keystore password |
+| `NIOFLOW_TLS_PORT` | No | `8443` | Native TLS listener port |
+| `NIOFLOW_EXPOSE_ERROR_DETAILS` | No | `false` | Include exception details in error payloads |
+| `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static files directory |
 
 ---
 
@@ -321,7 +375,7 @@ try (Connection conn = Database.getPostgresConnection()) {
 }
 ```
 
-### 2. MongoDB (Atlas / Local)
+### 2. MongoDB (Atlas / Local, optional)
 Initialize and access the document store:
 ```java
 // Reads MONGO_URI from .env
@@ -330,15 +384,6 @@ app.initMongo();
 MongoClient mongo = Database.getMongoClient();
 MongoDatabase db = mongo.getDatabase("nioflow");
 ```
-| `NIOFLOW_THREADS` / `nioflow.threads` | No | `10` | Worker pool size |
-| `NIOFLOW_QUEUE_CAPACITY` / `nioflow.queueCapacity` | No | `100` | Worker queue backpressure limit |
-| `NIOFLOW_SOCKET_TIMEOUT_MS` / `nioflow.socketTimeoutMs` | No | `15000` | Read timeout per socket |
-| `NIOFLOW_TLS_ENABLED` | No | `false` | Enable native TLS listener |
-| `NIOFLOW_TLS_KEYSTORE_PATH` | If TLS enabled | None | JKS keystore path for TLS |
-| `NIOFLOW_TLS_KEYSTORE_PASSWORD` | If TLS enabled | None | Keystore password |
-| `NIOFLOW_TLS_PORT` | No | `8443` | Port used by native TLS listener |
-| `NIOFLOW_EXPOSE_ERROR_DETAILS` | No | `false` | Include exception details in JSON error payloads |
-| `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static assets directory |
 
 ---
 
@@ -397,7 +442,7 @@ java -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-depende
 ```text
 .
 ├── nioflow-framework/
-│   └── src/main/java/com/jhanvi857/nioflow/
+│   └── src/main/java/io/github/jhanvi857/nioflow/
 │       ├── auth/            # JWT provider and auth primitives
 │       ├── exception/       # Exception handlers and mapping
 │       ├── middleware/      # Logger, CORS, auth, rate limit, metrics
@@ -408,12 +453,13 @@ java -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-depende
 │       └── server/          # NIO accept loop and connection handlers
 │
 ├── task-planner-app/
-│   └── src/main/java/com/jhanvi857/taskplanner/
+│   └── src/main/java/io/github/jhanvi857/taskplanner/
 │       ├── controller/      # HTTP-facing handlers
 │       ├── repository/      # JDBC access wrapped in futures
 │       ├── db/              # Hikari and DB bootstrap
 │       └── DemoApplication.java
 │
+├── documentation/nioflow/   # Next.js documentation portal
 ├── .github/workflows/       # CI build/test/security checks
 ├── Dockerfile               # Multi-stage image build
 ├── docker-compose.yml       # App + Postgres local stack

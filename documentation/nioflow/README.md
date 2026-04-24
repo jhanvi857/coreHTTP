@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NioFlow Documentation Portal
 
-## Getting Started
+This folder contains the standalone documentation web app for NioFlow, built with Next.js (App Router), TypeScript, and Tailwind CSS.
 
-First, run the development server:
+## Purpose
+
+The portal is intended to provide a product-style documentation experience for:
+
+- framework overview and architecture
+- getting started flows
+- routing, auth, and environment setup
+- deployment and operations guidance
+
+## Local Development
+
+From this folder:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build and Preview
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Lint
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+documentation/nioflow/
+├── app/
+│   ├── page.tsx                # marketing/home page
+│   ├── docs/                   # documentation sections
+│   ├── roadmap/                # roadmap page
+│   ├── showcase/               # feature showcase page
+│   ├── components/             # shared UI components
+│   └── lib/docsContent.ts      # shared content models/data
+├── public/                     # static assets
+├── eslint.config.mjs
+├── next.config.ts
+├── package.json
+└── tsconfig.json
+```
 
-## Deploy on Vercel
+## Authoring Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Keep examples aligned with live behavior in the Java modules at repository root.
+- When runtime defaults change, update both:
+	- root README
+	- docs pages under app/docs
+- Avoid product claims that exceed implementation details.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Related Docs
+
+- Root overview: ../../README.md
+- Operations runbook: ../../runbook.md
