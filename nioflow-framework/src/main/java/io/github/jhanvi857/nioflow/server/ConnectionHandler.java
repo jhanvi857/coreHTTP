@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 // import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +21,16 @@ public class ConnectionHandler implements Runnable {
     private final SelectionKey key;
     private final java.io.InputStream inStream;
     private final java.io.OutputStream outStream;
+    private final ExecutorService routeExecutor;
 
-    public ConnectionHandler(SocketChannel channel, java.io.InputStream inStream, java.io.OutputStream outStream, io.github.jhanvi857.nioflow.routing.Router router, SelectionKey key) {
+    public ConnectionHandler(SocketChannel channel, java.io.InputStream inStream, java.io.OutputStream outStream,
+            io.github.jhanvi857.nioflow.routing.Router router, SelectionKey key, ExecutorService routeExecutor) {
         this.channel = channel;
         this.inStream = inStream;
         this.outStream = outStream;
         this.router = router;
         this.key = key;
+        this.routeExecutor = routeExecutor;
     }
 
     @Override
@@ -56,33 +60,8 @@ public class ConnectionHandler implements Runnable {
                 String connectionHeader = request.getHeaders().getOrDefault("Connection", "close");
                 keepAlive = connectionHeader.equalsIgnoreCase("keep-alive");
 
-                io.github.jhanvi857.nioflow.routing.Route route = router.resolve(request.getMethod(), request.getPath());
-                io.github.jhanvi857.nioflow.protocol.HttpResponse response;
-                io.github.jhanvi857.nioflow.routing.HttpContext ctx = new io.github.jhanvi857.nioflow.routing.HttpContext(
-                        request);
-
-                if (route != null) {
-                    try {
-                        route.extractPathParams(request.getPath()).forEach(ctx::addPathParam);
-                        route.getHandler().handle(ctx);
-                        response = ctx.getResponse();
-                    } catch (Exception e) {
-                        io.github.jhanvi857.nioflow.exception.ExceptionHandler handler = router
-                                .getExceptionHandler(e.getClass());
-                        if (handler != null) {
-                            handler.handle(e, ctx);
-                            response = ctx.getResponse();
-                        } else {
-                            response = io.github.jhanvi857.nioflow.exception.GlobalExceptionHandler.handle(e);
-                            ctx.setResponse(response);
-                        }
-                    }
-                } else {
-                    response = new io.github.jhanvi857.nioflow.protocol.HttpResponse(
-                            io.github.jhanvi857.nioflow.protocol.HttpStatus.NOT_FOUND,
-                            "<h1>404 Not Found</h1>");
-                    ctx.setResponse(response);
-                }
+                io.github.jhanvi857.nioflow.routing.HttpContext ctx = router.dispatch(request, routeExecutor);
+                io.github.jhanvi857.nioflow.protocol.HttpResponse response = ctx.getResponse();
 
                 if (!keepAlive) {
                     response.addHeader("Connection", "close");
@@ -91,7 +70,11 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 // Send the response
-                response.writeTo(this.outStream);
+                if (!ctx.isDropResponse()) {
+                    response.writeTo(this.outStream);
+                } else {
+                    keepAlive = false;
+                }
 
                 if (!keepAlive) {
                     break;

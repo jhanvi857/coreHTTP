@@ -12,14 +12,19 @@ export default function ReferencePage() {
         language="java"
         code={`NioFlowApp app = new NioFlowApp();
 
-app.get(String path, Handler handler);
-app.post(String path, Handler handler);
-app.put(String path, Handler handler);
-app.delete(String path, Handler handler);
+    RouteRegistration route = app.get(String path, Handler handler);
+    route.timeout(int ms);
+    route.rateLimit(int requests, int windowMs);
+    route.hedge(int delayMs);
+
+    app.post(String path, Handler handler);
+    app.put(String path, Handler handler);
+    app.delete(String path, Handler handler);
 
 app.group(String prefix, GroupConfig config);
 app.exception(Class<? extends Throwable> type, ExceptionHandler handler);
 app.onError(GlobalErrorHandler handler);
+    app.enableReplay(int capacity);
 
 app.listen(int port);`}
       />
@@ -44,11 +49,43 @@ ctx.send("plain text");`}
       <CodeBlock
         title="middleware-order"
         language="java"
-        code={`app.use(new RequestLoggerMiddleware());
-app.use(new RateLimitMiddleware());
-app.use(new AuthMiddleware());
+        code={`app.use(new LoggerMiddleware());
+app.use(new ChaosMiddleware().latency(150, 0.05));
+app.use(new RateLimitMiddleware(100, 10_000));
 
-// order matters: logger -> rate limit -> auth -> route handler`}
+// order matters: logger -> chaos -> global limiter -> route/group policies`}
+      />
+
+      <H2 id="circuit-breaker">Circuit Breaker (Group Scoped)</H2>
+      <CodeBlock
+        title="circuit-breaker"
+        language="java"
+        code={`app.group("/api/downstream", group -> {
+    group.use(new CircuitBreakerMiddleware()
+        .threshold(0.5)
+        .windowSize(20)
+        .cooldown(10_000));
+
+    group.get("/inventory", inventoryController::read);
+});`}
+      />
+
+      <H2 id="replay-api">Request Replay API</H2>
+      <CodeBlock
+        title="replay-api"
+        language="text"
+        code={`Enable:
+NIOFLOW_REPLAY_ENABLED=true
+app.enableReplay(50)
+
+Endpoints:
+GET  /_replay
+POST /_replay/:index
+
+Sensitive headers stripped automatically:
+- Authorization
+- Cookie
+- X-API-Key`}
       />
 
       <H2 id="auth-utils">Auth Utilities</H2>
@@ -70,6 +107,17 @@ var claims = JwtProvider.validateToken(token);`}
 ctx.status(HttpStatus.CREATED).json(java.util.Map.of("id", 1));
 ctx.status(HttpStatus.BAD_REQUEST).json(java.util.Map.of("error", "invalid"));
 ctx.status(HttpStatus.UNAUTHORIZED).json(java.util.Map.of("error", "auth required"));`}
+      />
+
+      <H2 id="metrics-output">Metrics Output</H2>
+      <CodeBlock
+        title="metrics"
+        language="text"
+        code={`GET /metrics includes:
+- global middleware counters
+- per-route request/error/timeout/hedge counts
+- per-route p50/p95/p99 latencies
+- circuit breaker state per route-group`}
       />
     </>
   );

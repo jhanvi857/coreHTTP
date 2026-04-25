@@ -28,16 +28,16 @@ export const features: Feature[] = [
     description: "Selector-based accept loop with bounded worker pool processing for predictable load behavior.",
   },
   {
-    title: "JWT Authentication",
-    description: "Built-in stateless authentication with secure password hashing via BCrypt.",
+    title: "Fluent Route Policies",
+    description: "Per-route timeout, route-scoped rate limits, and request hedging through fluent registration APIs.",
   },
   {
-    title: "PostgreSQL + Optional Mongo",
-    description: "Built-in Postgres initialization and optional Mongo support through environment-driven setup.",
+    title: "Chaos + Replay (Opt-in)",
+    description: "Controlled chaos injection and in-memory request replay guarded by explicit environment flags.",
   },
   {
-    title: "Middleware + Plugins",
-    description: "Ordered middleware plus plugin registration for health checks and static file serving.",
+    title: "Circuit Breaker Groups",
+    description: "Route-group scoped circuit breaker with CLOSED/OPEN/HALF_OPEN states and metrics visibility.",
   },
 ];
 
@@ -75,6 +75,18 @@ export const configRows: ConfigRow[] = [
     jvmProperty: "nioflow.queueCapacity",
     envVar: "NIOFLOW_QUEUE_CAPACITY",
     defaultValue: "1000",
+  },
+  {
+    purpose: "Chaos middleware guard",
+    jvmProperty: "-",
+    envVar: "NIOFLOW_CHAOS_ENABLED",
+    defaultValue: "false",
+  },
+  {
+    purpose: "Replay feature guard",
+    jvmProperty: "-",
+    envVar: "NIOFLOW_REPLAY_ENABLED",
+    defaultValue: "false",
   },
 ];
 

@@ -146,7 +146,7 @@ public class HttpServer {
                 outStream = java.nio.channels.Channels.newOutputStream(clientChannel);
             }
 
-            threadPool.execute(new ConnectionHandler(clientChannel, inStream, outStream, router, null));
+            threadPool.execute(new ConnectionHandler(clientChannel, inStream, outStream, router, null, threadPool));
         } catch (RejectedExecutionException rejected) {
             logger.warn("Server busy! Rejecting connection.");
             sendServiceUnavailable(clientChannel);

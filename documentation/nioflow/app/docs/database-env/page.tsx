@@ -46,6 +46,9 @@ export default function DatabaseEnvPage() {
           code={`# Server Configuration
 PORT=8080
 JWT_SECRET=your_super_secret_signing_key_at_least_32_chars
+NIOFLOW_CORS_ORIGIN=http://localhost:3000
+NIOFLOW_CHAOS_ENABLED=false
+NIOFLOW_REPLAY_ENABLED=false
 
 # Postgres Configuration (Supabase)
 JDBC_URL=jdbc:postgresql://your-db-host.supabase.co:5432/postgres
@@ -111,7 +114,11 @@ MongoDatabase db = mongo.getDatabase("production");`}
           language="java"
           title="Accessing configuration"
           code={`// Get String with fallback
-String origin = Env.get("CORS_ORIGIN", "http://localhost:3000");
+      String origin = Env.get("NIOFLOW_CORS_ORIGIN", "http://localhost:3000");
+
+      // Feature guards
+      boolean chaosEnabled = Env.getAsBoolean("NIOFLOW_CHAOS_ENABLED", false);
+      boolean replayEnabled = Env.getAsBoolean("NIOFLOW_REPLAY_ENABLED", false);
 
 // Get typed primitives
 int port = Env.getAsInt("PORT", 8080);

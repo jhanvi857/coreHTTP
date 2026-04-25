@@ -59,6 +59,12 @@ documentation/nioflow/
 - When runtime defaults change, update both:
 	- root README
 	- docs pages under app/docs
+- When adding/removing framework features, update all of these in the same PR:
+	- root README feature and config sections
+	- app/docs/getting-started/page.tsx
+	- app/docs/reference/page.tsx
+	- app/docs/deployment/page.tsx
+	- .env.example at repository root
 - Avoid product claims that exceed implementation details.
 
 ## Related Docs

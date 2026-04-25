@@ -34,7 +34,9 @@ export default function DeploymentPage() {
         code={`PORT=8080
 JWT_SECRET=replace-with-32-plus-char-secret
 NIOFLOW_CORS_ORIGIN=https://your-frontend-domain
-NIOFLOW_ENABLE_DB=false`}
+    NIOFLOW_ENABLE_DB=false
+    NIOFLOW_CHAOS_ENABLED=false
+    NIOFLOW_REPLAY_ENABLED=false`}
       />
 
       <H2 id="recommended-production-env">Recommended Production Runtime Values</H2>
@@ -43,6 +45,8 @@ NIOFLOW_ENABLE_DB=false`}
         language="bash"
         code={`NIOFLOW_EXPOSE_ERROR_DETAILS=false
 NIOFLOW_DISABLE_AUTH=false
+    NIOFLOW_CHAOS_ENABLED=false
+    NIOFLOW_REPLAY_ENABLED=false
 JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC`}
       />
 
@@ -118,6 +122,8 @@ curl -fsS https://your-api/api/tasks/
         code={`[ ] JWT secret >= 32 chars
 [ ] CORS origin locked to frontend domain
 [ ] Error details disabled
+    [ ] Chaos mode disabled (NIOFLOW_CHAOS_ENABLED=false)
+    [ ] Replay mode disabled (NIOFLOW_REPLAY_ENABLED=false)
 [ ] Health/readiness checks configured
 [ ] Logs and alerts enabled
 [ ] Backup strategy documented`}

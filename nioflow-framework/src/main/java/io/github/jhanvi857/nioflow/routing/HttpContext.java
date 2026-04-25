@@ -6,13 +6,22 @@ import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 import io.github.jhanvi857.nioflow.util.JsonUtils;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 public class HttpContext {
     private final HttpRequest request;
+    private final ExecutorService routeExecutor;
     private HttpResponse response;
+    private String routePattern;
+    private boolean dropResponse;
 
     public HttpContext(HttpRequest request) {
+        this(request, null);
+    }
+
+    public HttpContext(HttpRequest request, ExecutorService routeExecutor) {
         this.request = request;
+        this.routeExecutor = routeExecutor;
         // Default response is 200 OK, empty body
         this.response = new HttpResponse(HttpStatus.OK, "");
     }
@@ -29,6 +38,10 @@ public class HttpContext {
         this.response = response;
     }
 
+    public ExecutorService routeExecutor() {
+        return routeExecutor;
+    }
+
     // --- Request Helpers ---
 
     public String path() {
@@ -37,6 +50,14 @@ public class HttpContext {
 
     public String method() {
         return request.getMethod();
+    }
+
+    public String routePattern() {
+        return routePattern != null ? routePattern : request.getPath();
+    }
+
+    public void setRoutePattern(String routePattern) {
+        this.routePattern = routePattern;
     }
 
     public String header(String name) {
@@ -61,6 +82,10 @@ public class HttpContext {
 
     public void addPathParam(String key, String value) {
         pathParams.put(key, value);
+    }
+
+    public Map<String, String> pathParams() {
+        return java.util.Collections.unmodifiableMap(pathParams);
     }
 
     public <T> T body(Class<T> type) {
@@ -100,5 +125,20 @@ public class HttpContext {
         String jsonString = JsonUtils.toJson(data);
         this.response = new HttpResponse(response.getStatus(), jsonString);
         this.response.addHeader("Content-Type", "application/json; charset=UTF-8");
+    }
+
+    public void dropResponse() {
+        this.dropResponse = true;
+    }
+
+    public boolean isDropResponse() {
+        return dropResponse;
+    }
+
+    public HttpContext fork() {
+        HttpContext forked = new HttpContext(request, routeExecutor);
+        forked.routePattern = this.routePattern;
+        forked.pathParams.putAll(this.pathParams);
+        return forked;
     }
 }
