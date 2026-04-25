@@ -43,8 +43,8 @@ public class DemoApplication {
         String corsOrigin = Env.get("NIOFLOW_CORS_ORIGIN", "http://localhost:3000");
         app.use(new io.github.jhanvi857.nioflow.middleware.CorsMiddleware(corsOrigin));
         app.use(new io.github.jhanvi857.nioflow.middleware.MetricsMiddleware());
-        // Simple Rate Limit: 100 requests per 10 seconds locally
-        app.use(new io.github.jhanvi857.nioflow.middleware.RateLimitMiddleware(100, 10000));
+        // Simple Rate Limit: 100,000 requests per 10 seconds for load testing
+        app.use(new io.github.jhanvi857.nioflow.middleware.RateLimitMiddleware(100000, 10000));
 
         // 2. Resolving static assets
         String staticDir = Env.get("nioflow.staticDir", Env.get("NIOFLOW_STATIC_DIR", resolveDefaultStaticDir()));

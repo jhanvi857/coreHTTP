@@ -513,6 +513,30 @@ java -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-depende
 
 ---
 
+## Performance Benchmarks
+
+NioFlow is designed for high-performance NIO-based request handling. Below are the results of a standardized load test conducted against the `task-planner-app` reference implementation.
+
+### Test Environment & Setup
+- **Tooling:** k6 v1.7.1
+- **Endpoint:** `GET /_health` (unauthenticated)
+- **Profile:** Graduated ramp-up from 0 to 100 Virtual Users (VUs) over 2 minutes.
+- **Hardware:** Local execution on Windows (Consumer-grade CPU/RAM).
+
+### Key Metrics
+| Metric | Result |
+| :--- | :--- |
+| **Throughput** | **501.12 requests/second** |
+| **Median Latency (p50)** | **1.52 ms** |
+| **p95 Latency** | **47.75 ms** |
+| **p99 Latency** | **74.62 ms** |
+| **Success Rate** | **99.84%** (0.16% error rate at peak 100 VUs) |
+
+### Analysis
+The results demonstrate excellent efficiency in the median case, with a tiny **1.52ms overhead** for request parsing and routing. At peak load (100 concurrent VUs), the server reached its configured worker pool limit (64 threads), resulting in queuing delays (reflected in the p99 latency) and a negligible number of connection refusals (0.16%) once the OS listen backlog was fully saturated.
+
+---
+
 ## Repository Structure
 
 ```text
