@@ -2,36 +2,47 @@ package io.github.jhanvi857.nioflow;
 
 import io.github.jhanvi857.nioflow.db.Database;
 import io.github.jhanvi857.nioflow.middleware.Middleware;
+import io.github.jhanvi857.nioflow.protocol.HttpRequest;
+import io.github.jhanvi857.nioflow.protocol.HttpStatus;
+import io.github.jhanvi857.nioflow.replay.RequestReplayFeature;
+import io.github.jhanvi857.nioflow.routing.HttpContext;
+import io.github.jhanvi857.nioflow.routing.Route;
 import io.github.jhanvi857.nioflow.routing.RouteHandler;
+import io.github.jhanvi857.nioflow.routing.RouteRegistration;
 import io.github.jhanvi857.nioflow.routing.Router;
 import io.github.jhanvi857.nioflow.server.HttpServer;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NioFlowApp {
+    private static final Logger logger = LoggerFactory.getLogger(NioFlowApp.class);
     private final Router router;
     private HttpServer activeServer;
+    private RequestReplayFeature replayFeature;
 
     public NioFlowApp() {
         this.router = new Router();
     }
 
-    public NioFlowApp get(String path, RouteHandler handler) {
-        router.get(path, handler);
-        return this;
+    public RouteRegistration get(String path, RouteHandler handler) {
+        Route route = router.get(path, handler);
+        return new RouteRegistration(route);
     }
 
-    public NioFlowApp post(String path, RouteHandler handler) {
-        router.post(path, handler);
-        return this;
+    public RouteRegistration post(String path, RouteHandler handler) {
+        Route route = router.post(path, handler);
+        return new RouteRegistration(route);
     }
 
-    public NioFlowApp put(String path, RouteHandler handler) {
-        router.put(path, handler);
-        return this;
+    public RouteRegistration put(String path, RouteHandler handler) {
+        Route route = router.put(path, handler);
+        return new RouteRegistration(route);
     }
 
-    public NioFlowApp delete(String path, RouteHandler handler) {
-        router.delete(path, handler);
-        return this;
+    public RouteRegistration delete(String path, RouteHandler handler) {
+        Route route = router.delete(path, handler);
+        return new RouteRegistration(route);
     }
 
     public NioFlowApp use(Middleware middleware) {
@@ -106,5 +117,46 @@ public class NioFlowApp {
             this.activeServer.drainAndStop(timeout, unit);
         }
         Database.shutdown();
+    }
+
+    public HttpContext dispatch(HttpRequest request, java.util.concurrent.ExecutorService routeExecutor) {
+        return router.dispatch(request, routeExecutor);
+    }
+
+    public NioFlowApp enableReplay(int capacity) {
+        if (!Env.getAsBoolean("NIOFLOW_REPLAY_ENABLED", false)) {
+            logger.warn("Request replay is disabled. Set NIOFLOW_REPLAY_ENABLED=true to enable.");
+            return this;
+        }
+
+        this.replayFeature = new RequestReplayFeature(capacity);
+        this.use((ctx, next) -> replayFeature.middleware(next).handle(ctx));
+
+        this.get("/_replay", ctx -> ctx.status(HttpStatus.OK).json(replayFeature.dump()));
+
+        this.post("/_replay/:index", ctx -> {
+            String rawIndex = ctx.pathParam("index");
+            if (rawIndex == null || rawIndex.isBlank()) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "Missing replay index"));
+                return;
+            }
+
+            int index;
+            try {
+                index = Integer.parseInt(rawIndex);
+            } catch (NumberFormatException ex) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "Replay index must be numeric"));
+                return;
+            }
+
+            Map<String, Object> result = replayFeature.replayIndex(router, index, ctx.routeExecutor());
+            if (result.containsKey("error")) {
+                ctx.status(HttpStatus.NOT_FOUND).json(result);
+                return;
+            }
+            ctx.status(HttpStatus.OK).json(result);
+        });
+
+        return this;
     }
 }
