@@ -3,6 +3,7 @@ package io.github.jhanvi857.nioflow.middleware;
 import io.github.jhanvi857.nioflow.routing.HttpContext;
 import io.github.jhanvi857.nioflow.routing.RouteHandler;
 import io.github.jhanvi857.nioflow.observability.MetricsRegistry;
+import io.github.jhanvi857.nioflow.observability.RouteObservabilityRegistry;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +50,7 @@ public class MetricsMiddleware implements Middleware {
     }
 
     public static String getMetricsReport() {
-        return MetricsRegistry.scrape();
+        return MetricsRegistry.scrape() + "\n" + RouteObservabilityRegistry.renderTextReport();
     }
 }
 
