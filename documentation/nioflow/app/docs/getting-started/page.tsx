@@ -38,18 +38,46 @@ java -cp .\\nioflow-framework-1.0.0.jar;. App`}
         title="App.java"
         language="java"
         code={`import io.github.jhanvi857.nioflow.NioFlowApp;
+import io.github.jhanvi857.nioflow.middleware.ChaosMiddleware;
+import io.github.jhanvi857.nioflow.middleware.CircuitBreakerMiddleware;
 import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 
 public class App {
     public static void main(String[] args) {
         NioFlowApp app = new NioFlowApp();
 
+        app.use(new ChaosMiddleware().latency(120, 0.05));
+
         app.get("/", ctx -> ctx.send("NioFlow is running"));
+        app.get("/api/search", searchController::search)
+           .timeout(1500)
+           .rateLimit(40, 10_000)
+           .hedge(100);
+
+        app.group("/api/downstream", group -> {
+            group.use(new CircuitBreakerMiddleware().threshold(0.5).windowSize(20).cooldown(10_000));
+            group.get("/inventory", inventoryController::read);
+        });
+
+        app.enableReplay(50);
         app.get("/_health", ctx -> ctx.status(HttpStatus.OK).json(java.util.Map.of("status", "UP")));
 
         app.listen(8080);
     }
 }`}
+      />
+
+      <H2 id="feature-flags">Feature Flags (Safe Defaults)</H2>
+      <CodeBlock
+        title=".env"
+        language="bash"
+        code={`# disabled by default
+NIOFLOW_CHAOS_ENABLED=false
+NIOFLOW_REPLAY_ENABLED=false
+
+# enable intentionally in non-prod debugging sessions
+# NIOFLOW_CHAOS_ENABLED=true
+# NIOFLOW_REPLAY_ENABLED=true`}
       />
 
       <H2 id="port-config">Port Registration</H2>

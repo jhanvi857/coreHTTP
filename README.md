@@ -20,6 +20,7 @@ NioFlow is designed around one principle: make HTTP internals understandable wit
 - [Quick Start](#quick-start)
 - [Documentation Site](#documentation-site)
 - [Framework Programming Model](#framework-programming-model)
+- [Advanced Feature Pack](#advanced-feature-pack)
 - [Architecture Deep Dive](#architecture-deep-dive)
 - [Security Model](#security-model)
 - [Configuration Matrix](#configuration-matrix)
@@ -244,6 +245,79 @@ public CompletableFuture<Optional<Task>> findById(Long id) {
 
 ---
 
+## Advanced Feature Pack
+
+NioFlow now includes five opt-in features designed for small teams operating production services without heavy platform infrastructure.
+
+### 1. ChaosMiddleware (controlled fault injection)
+
+```java
+app.use(
+    new ChaosMiddleware()
+        .latency(200, 0.10)
+        .error(500, 0.05)
+        .drop(0.01)
+);
+```
+
+- Guarded by `NIOFLOW_CHAOS_ENABLED=true`.
+- Logs each injected fault with route and path.
+- Supports composable latency, error, and drop behavior.
+
+### 2. Per-route observability and protection (fluent API)
+
+```java
+app.get("/api/orders", ordersController::list)
+   .timeout(2000)
+   .rateLimit(50, 10_000);
+```
+
+- Per-route request/error counters.
+- Per-route p50/p95/p99 latency (sliding in-memory window).
+- Route-scoped timeout and route-scoped rate limit.
+
+### 3. Request hedging for tail-latency reduction
+
+```java
+app.get("/api/search", searchController::search)
+   .hedge(100);
+```
+
+- Fires a backup execution when primary crosses threshold.
+- Returns first successful completion.
+- Hedge trigger count appears in route-level metrics.
+
+### 4. Route-group scoped circuit breaker middleware
+
+```java
+app.group("/api/downstream", group -> {
+    group.use(new CircuitBreakerMiddleware()
+        .threshold(0.5)
+        .windowSize(20)
+        .cooldown(10_000));
+
+    group.get("/inventory", inventoryController::read);
+});
+```
+
+- CLOSED / OPEN / HALF_OPEN states.
+- OPEN returns `503` and `Retry-After` header.
+- Circuit state is exposed per route-group in `/metrics` output.
+
+### 5. Request replay for fast debugging
+
+```java
+app.enableReplay(50);
+```
+
+- Guarded by `NIOFLOW_REPLAY_ENABLED=true`.
+- Captures recent requests in circular memory buffer.
+- `GET /_replay` lists recorded requests.
+- `POST /_replay/:index` replays through current live pipeline and returns original vs current response.
+- Sensitive headers (`Authorization`, `Cookie`, `X-API-Key`) are stripped automatically.
+
+---
+
 ## Architecture Deep Dive
 
 ### Runtime Topology
@@ -356,6 +430,8 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 | `NIOFLOW_TLS_PORT` | No | `8443` | Native TLS listener port |
 | `NIOFLOW_EXPOSE_ERROR_DETAILS` | No | `false` | Include exception details in error payloads |
 | `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static files directory |
+| `NIOFLOW_CHAOS_ENABLED` | No | `false` | Enables `ChaosMiddleware` fault injection |
+| `NIOFLOW_REPLAY_ENABLED` | No | `false` | Enables `enableReplay(...)` endpoints |
 
 ---
 
