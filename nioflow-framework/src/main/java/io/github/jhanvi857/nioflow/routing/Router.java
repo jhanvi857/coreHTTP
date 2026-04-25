@@ -1,12 +1,17 @@
 package io.github.jhanvi857.nioflow.routing;
 
 import io.github.jhanvi857.nioflow.exception.ExceptionHandler;
+import io.github.jhanvi857.nioflow.exception.GlobalExceptionHandler;
+import io.github.jhanvi857.nioflow.protocol.HttpRequest;
+import io.github.jhanvi857.nioflow.protocol.HttpResponse;
+import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 import io.github.jhanvi857.nioflow.middleware.Middleware;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,34 +41,36 @@ public class Router {
         globalMiddleware.add(middleware);
     }
 
-    public void get(String path, RouteHandler handler) {
-        register("GET", path, handler);
+    public Route get(String path, RouteHandler handler) {
+        return register("GET", path, handler);
     }
 
-    public void post(String path, RouteHandler handler) {
-        register("POST", path, handler);
+    public Route post(String path, RouteHandler handler) {
+        return register("POST", path, handler);
     }
 
-    public void put(String path, RouteHandler handler) {
-        register("PUT", path, handler);
+    public Route put(String path, RouteHandler handler) {
+        return register("PUT", path, handler);
     }
 
-    public void delete(String path, RouteHandler handler) {
-        register("DELETE", path, handler);
+    public Route delete(String path, RouteHandler handler) {
+        return register("DELETE", path, handler);
     }
 
-    public void register(String method, String path, RouteHandler handler) {
-        registerWithMiddleware(method, path, handler, Collections.emptyList());
+    public Route register(String method, String path, RouteHandler handler) {
+        return registerWithMiddleware(method, path, handler, Collections.emptyList());
     }
 
-    public void registerWithMiddleware(String method, String path, RouteHandler handler,
+    public Route registerWithMiddleware(String method, String path, RouteHandler handler,
             List<Middleware> scopedMiddleware) {
         logger.debug("Registering route: {} {}", method, path);
         List<Middleware> allMiddleware = new ArrayList<>(globalMiddleware);
         allMiddleware.addAll(scopedMiddleware);
 
         RouteHandler finalHandler = wrapHandler(handler, allMiddleware);
-        routes.add(new Route(method, path, finalHandler));
+        Route route = new Route(method, path, finalHandler);
+        routes.add(route);
+        return route;
     }
 
     private RouteHandler wrapHandler(RouteHandler finalHandler, List<Middleware> middlewareList) {
@@ -87,5 +94,36 @@ public class Router {
         }
         logger.info("No route found for {} {}", method, path);
         return null;
+    }
+
+    public HttpContext dispatch(HttpRequest request, ExecutorService routeExecutor) {
+        Route route = resolve(request.getMethod(), request.getPath());
+        HttpContext ctx = new HttpContext(request, routeExecutor);
+
+        if (route == null) {
+            HttpResponse notFound = new HttpResponse(HttpStatus.NOT_FOUND, "<h1>404 Not Found</h1>");
+            ctx.setResponse(notFound);
+            return ctx;
+        }
+
+        route.extractPathParams(request.getPath()).forEach(ctx::addPathParam);
+        ctx.setRoutePattern(route.key());
+
+        try {
+            route.execute(ctx, routeExecutor);
+            return ctx;
+        } catch (Exception e) {
+            ExceptionHandler handler = getExceptionHandler(e.getClass());
+            if (handler != null) {
+                try {
+                    handler.handle(e, ctx);
+                } catch (Exception handlerException) {
+                    ctx.setResponse(GlobalExceptionHandler.handle(handlerException));
+                }
+            } else {
+                ctx.setResponse(GlobalExceptionHandler.handle(e));
+            }
+            return ctx;
+        }
     }
 }
