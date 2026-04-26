@@ -10,5 +10,5 @@
     </root>
 
     <!-- Set to DEBUG for development troubleshooting -->
-    <logger name="io.github.jhanvi857.nioflow" level="INFO" />
+    <logger name="io.github.jhanvi857.nioflow" level="DEBUG" />
 </configuration>

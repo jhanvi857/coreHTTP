@@ -316,6 +316,17 @@ app.enableReplay(50);
 - `POST /_replay/:index` replays through current live pipeline and returns original vs current response.
 - Sensitive headers (`Authorization`, `Cookie`, `X-API-Key`) are stripped automatically.
 
+### 6. Hot Reload (Watch Mode)
+
+```java
+NioFlowApp.enableHotReload(DemoApplication.class, args);
+```
+
+- Guarded by `NIOFLOW_WATCH=true`.
+- Monitors source directory for changes.
+- Automatically recompiles using Maven (`mvn`, `mvnw`, or `mvn.ps1`).
+- Restarts the application in a child process for near-instant developer feedback.
+
 ---
 
 ## Architecture Deep Dive
@@ -432,6 +443,7 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 | `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static files directory |
 | `NIOFLOW_CHAOS_ENABLED` | No | `false` | Enables `ChaosMiddleware` fault injection |
 | `NIOFLOW_REPLAY_ENABLED` | No | `false` | Enables `enableReplay(...)` endpoints |
+| `NIOFLOW_WATCH` | No | `false` | Enables nodemon-like hot reload (Watch Mode) |
 
 ---
 

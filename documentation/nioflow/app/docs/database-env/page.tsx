@@ -49,6 +49,7 @@ JWT_SECRET=your_super_secret_signing_key_at_least_32_chars
 NIOFLOW_CORS_ORIGIN=http://localhost:3000
 NIOFLOW_CHAOS_ENABLED=false
 NIOFLOW_REPLAY_ENABLED=false
+NIOFLOW_WATCH=false
 
 # Postgres Configuration (Supabase)
 JDBC_URL=jdbc:postgresql://your-db-host.supabase.co:5432/postgres
@@ -119,6 +120,7 @@ MongoDatabase db = mongo.getDatabase("production");`}
       // Feature guards
       boolean chaosEnabled = Env.getAsBoolean("NIOFLOW_CHAOS_ENABLED", false);
       boolean replayEnabled = Env.getAsBoolean("NIOFLOW_REPLAY_ENABLED", false);
+      boolean watchEnabled = Env.getAsBoolean("NIOFLOW_WATCH", false);
 
 // Get typed primitives
 int port = Env.getAsInt("PORT", 8080);

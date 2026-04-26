@@ -16,6 +16,8 @@ public class DemoApplication {
     private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
     public static void main(String[] args) {
+        NioFlowApp.enableHotReload(DemoApplication.class, args);
+        
         boolean authDisabled = Env.getAsBoolean("NIOFLOW_DISABLE_AUTH", false);
         String jwtSecret = Env.get("JWT_SECRET", Env.get("nioflow.jwtSecret"));
         

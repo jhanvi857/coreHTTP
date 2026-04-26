@@ -12,6 +12,7 @@ import io.github.jhanvi857.nioflow.routing.RouteRegistration;
 import io.github.jhanvi857.nioflow.routing.Router;
 import io.github.jhanvi857.nioflow.server.HttpServer;
 import java.util.Map;
+import io.github.jhanvi857.nioflow.util.HotReloader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,18 @@ public class NioFlowApp {
 
     public NioFlowApp() {
         this.router = new Router();
+    }
+
+    /**
+     * Enables nodemon-like hot reload. If enabled via NIOFLOW_WATCH=true,
+     * this method will block the parent process and manage a child process
+     * that restarts on file changes.
+     * 
+     * @param mainClass The main class of your application
+     * @param args The command line arguments passed to main
+     */
+    public static void enableHotReload(Class<?> mainClass, String[] args) {
+        HotReloader.setup(mainClass, args);
     }
 
     public RouteRegistration get(String path, RouteHandler handler) {

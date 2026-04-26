@@ -25,6 +25,7 @@ app.group(String prefix, GroupConfig config);
 app.exception(Class<? extends Throwable> type, ExceptionHandler handler);
 app.onError(GlobalErrorHandler handler);
     app.enableReplay(int capacity);
+    app.enableHotReload(Class<?> mainClass, String[] args);
 
 app.listen(int port);`}
       />

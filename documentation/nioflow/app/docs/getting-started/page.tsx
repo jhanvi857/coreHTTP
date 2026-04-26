@@ -44,6 +44,9 @@ import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 
 public class App {
     public static void main(String[] args) {
+        // Enable hot reload for developer productivity
+        NioFlowApp.enableHotReload(App.class, args);
+
         NioFlowApp app = new NioFlowApp();
 
         app.use(new ChaosMiddleware().latency(120, 0.05));
@@ -74,10 +77,13 @@ public class App {
         code={`# disabled by default
 NIOFLOW_CHAOS_ENABLED=false
 NIOFLOW_REPLAY_ENABLED=false
+NIOFLOW_WATCH=false
 
 # enable intentionally in non-prod debugging sessions
 # NIOFLOW_CHAOS_ENABLED=true
-# NIOFLOW_REPLAY_ENABLED=true`}
+# NIOFLOW_REPLAY_ENABLED=true
+# NIOFLOW_WATCH=true
+`}
       />
 
       <H2 id="port-config">Port Registration</H2>
