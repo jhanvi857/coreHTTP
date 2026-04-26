@@ -1,4 +1,6 @@
 import { SectionCard } from "./_components";
+import Link from "next/link";
+
 
 export default function DocsHomePage() {
   return (
@@ -60,7 +62,13 @@ export default function DocsHomePage() {
           title="6. Reference"
           description="Configuration matrix, endpoint reference, starter zip endpoint design, and troubleshooting."
         />
+        <SectionCard
+          href="/docs/performance"
+          title="7. Performance"
+          description="Load test results, throughput analysis, latency matrix, and hardware validation reports."
+        />
       </div>
+
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         <article className="rounded-xl border border-muted bg-surface p-5">
@@ -120,6 +128,32 @@ export default function DocsHomePage() {
           </li>
         </ol>
       </section>
+
+      <section className="rounded-2xl border border-muted bg-surface p-6 md:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Performance Baselines</h2>
+          <Link href="/docs/performance" className="text-sm font-medium text-blue-600 hover:underline">View full report →</Link>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl border border-muted bg-muted/20">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Throughput</div>
+            <div className="text-xl font-bold text-gray-900 dark:text-white">501 req/s</div>
+          </div>
+          <div className="p-4 rounded-xl border border-muted bg-muted/20">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">p50 Latency</div>
+            <div className="text-xl font-bold text-gray-900 dark:text-white">1.52 ms</div>
+          </div>
+          <div className="p-4 rounded-xl border border-muted bg-muted/20">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">p99 Latency</div>
+            <div className="text-xl font-bold text-gray-900 dark:text-white">74.6 ms</div>
+          </div>
+          <div className="p-4 rounded-xl border border-muted bg-muted/20">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Success Rate</div>
+            <div className="text-xl font-bold text-gray-900 dark:text-white">99.84%</div>
+          </div>
+        </div>
+      </section>
+
     </>
   );
 }

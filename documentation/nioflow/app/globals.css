@@ -279,3 +279,11 @@ html.dark .text-slate-500 {
 .text-primary {
   color: var(--fg-primary) !important;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

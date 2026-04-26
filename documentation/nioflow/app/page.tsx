@@ -2,6 +2,10 @@ import Link from "next/link";
 import CodeDemo from "./components/CodeDemo";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
+import DependencyTabs from "./components/DependencyTabs";
+import BenchmarkStats from "./components/BenchmarkStats";
+
+
 
 export default function Home() {
   return (
@@ -17,10 +21,18 @@ export default function Home() {
           <div className="relative z-10 max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-16">
 
             <div className="flex-1 flex flex-col items-start text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium border border-[#333] rounded-full bg-[#111] mb-8">
-                <span className="flex h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-                <span className="text-gray-300">Java NIO Systems Engineering</span>
+              <div className="flex flex-wrap items-center gap-4 mb-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium border border-[#333] rounded-full bg-[#111]">
+                  <span className="flex h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                  <span className="text-gray-300">Java NIO Systems Engineering</span>
+                </div>
+                <div className="flex items-center gap-4 text-[12px] font-mono text-gray-500 border-l border-[#333] pl-4">
+                  <span className="flex items-center gap-1.5"><span className="text-blue-400">501</span> req/s</span>
+                  <span className="flex items-center gap-1.5"><span className="text-green-400">1.5ms</span> p50</span>
+                  <span className="flex items-center gap-1.5"><span className="text-yellow-400">99.8%</span> success</span>
+                </div>
               </div>
+
 
               <h1 className="text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
                 NioFlow: A Configurable Java <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-600">Micro-Framework.</span>
@@ -200,7 +212,10 @@ export default function Home() {
                 The framework avoids reflection and hidden dependency injection containers. Authored by <strong>Jhanvi Patel</strong>, NioFlow ensures all dependencies and middleware flows are explicit and predictable.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <BenchmarkStats />
+
+              <div className="flex flex-col sm:flex-row gap-4 mt-12">
+
                 <Link href="/docs" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-white text-black hover:bg-gray-200 transition-colors rounded-lg shadow-md">
                   Read Technical Summary
                 </Link>
@@ -211,42 +226,8 @@ export default function Home() {
             </div>
 
             {/* Right Visual / Meta Column */}
-            <div className="relative w-full h-full min-h-[400px] rounded-2xl border border-[#222] bg-[#111] overflow-hidden flex flex-col items-center justify-center p-8 group">
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-
-              <div className="relative z-10 w-full max-w-sm rounded-xl border border-[#333] bg-black/80 backdrop-blur-md shadow-2xl p-6">
-                <div className="flex items-center justify-between border-b border-[#333] pb-4 mb-4">
-                  <div className="text-xs font-mono text-gray-500 uppercase tracking-widest">Stack Manifest</div>
-                </div>
-                <div className="space-y-4 font-mono text-[13px]">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Core Engine</span>
-                    <span className="text-gray-300">Native java.nio</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Data Pipeline</span>
-                    <span className="text-gray-300">FileChannel DMA</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Persistence</span>
-                    <span className="text-gray-300">PostgreSQL 15+</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Cryptography</span>
-                    <span className="text-gray-300">BCrypt / JWT</span>
-                  </div>
-                  <div className="pt-4 mt-2 border-t border-[#333] flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-blue-400 font-semibold">
-                      <span>License</span>
-                      <span>MIT</span>
-                    </div>
-                    <div className="text-[11px] text-gray-600 leading-tight">
-                      * Uses <strong>dotenv-java</strong> (Apache 2.0) by <strong>io.github.cdimascio</strong> for environment orchestration.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+            <div className="relative w-full h-full min-h-[400px] flex flex-col items-center justify-center">
+              <DependencyTabs />
             </div>
 
           </div>

@@ -17,44 +17,57 @@ export default function PerformancePage() {
       </ul>
 
       <H2 id="results">Results Matrix</H2>
-      <div className="overflow-x-auto my-6">
+      <div className="my-8 rounded-2xl border border-muted bg-surface/50 overflow-hidden shadow-sm">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-muted">
-              <th className="py-2 font-semibold">Metric</th>
-              <th className="py-2 font-semibold">Value</th>
-              <th className="py-2 font-semibold">Notes</th>
+            <tr className="bg-muted/30 border-b border-muted">
+              <th className="py-4 px-6 font-semibold text-sm uppercase tracking-wider text-gray-500">Metric</th>
+              <th className="py-4 px-6 font-semibold text-sm uppercase tracking-wider text-gray-500">Value</th>
+              <th className="py-4 px-6 font-semibold text-sm uppercase tracking-wider text-gray-500">Notes</th>
             </tr>
           </thead>
-          <tbody>
-            <tr className="border-b border-muted/50">
-              <td className="py-3">Throughput</td>
-              <td className="py-3 font-mono">501.12 req/s</td>
-              <td className="py-3">Sustained under peak load</td>
+          <tbody className="divide-y divide-muted/50">
+            <tr className="hover:bg-muted/10 transition-colors">
+              <td className="py-5 px-6 font-medium text-gray-900 dark:text-white">Throughput</td>
+              <td className="py-5 px-6">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                  501.12 req/s
+                </span>
+              </td>
+              <td className="py-5 px-6 text-sm text-gray-600 dark:text-gray-400">Sustained under peak load (100 VUs)</td>
             </tr>
-            <tr className="border-b border-muted/50">
-              <td className="py-3">Median Latency (p50)</td>
-              <td className="py-3 font-mono">1.52 ms</td>
-              <td className="py-3">Very low framework overhead</td>
+            <tr className="hover:bg-muted/10 transition-colors">
+              <td className="py-5 px-6 font-medium text-gray-900 dark:text-white">Median Latency (p50)</td>
+              <td className="py-5 px-6">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                  1.52 ms
+                </span>
+              </td>
+              <td className="py-5 px-6 text-sm text-gray-600 dark:text-gray-400">Minimal framework overhead for routing</td>
             </tr>
-            <tr className="border-b border-muted/50">
-              <td className="py-3">p95 Latency</td>
-              <td className="py-3 font-mono">47.75 ms</td>
-              <td className="py-3">Acceptable tail latency</td>
+            <tr className="hover:bg-muted/10 transition-colors">
+              <td className="py-5 px-6 font-medium text-gray-900 dark:text-white">p95 Latency</td>
+              <td className="py-5 px-6 font-mono text-sm">47.75 ms</td>
+              <td className="py-5 px-6 text-sm text-gray-600 dark:text-gray-400">Efficient queue management</td>
             </tr>
-            <tr className="border-b border-muted/50">
-              <td className="py-3">p99 Latency</td>
-              <td className="py-3 font-mono">74.62 ms</td>
-              <td className="py-3">Queuing delays at max worker capacity</td>
+            <tr className="hover:bg-muted/10 transition-colors">
+              <td className="py-5 px-6 font-medium text-gray-900 dark:text-white">p99 Latency</td>
+              <td className="py-5 px-6 font-mono text-sm text-yellow-600 dark:text-yellow-400">74.62 ms</td>
+              <td className="py-5 px-6 text-sm text-gray-600 dark:text-gray-400">Queuing delay at max worker capacity</td>
             </tr>
-            <tr>
-              <td className="py-3">Success Rate</td>
-              <td className="py-3 font-mono">99.84%</td>
-              <td className="py-3">0.16% connection drops at peak</td>
+            <tr className="hover:bg-muted/10 transition-colors">
+              <td className="py-5 px-6 font-medium text-gray-900 dark:text-white">Success Rate</td>
+              <td className="py-5 px-6">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                  99.84%
+                </span>
+              </td>
+              <td className="py-5 px-6 text-sm text-gray-600 dark:text-gray-400">High reliability under saturation</td>
             </tr>
           </tbody>
         </table>
       </div>
+
 
       <H2 id="analysis">Technical Analysis</H2>
       <H3>Efficiency and Overhead</H3>
