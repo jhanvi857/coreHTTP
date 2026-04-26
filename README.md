@@ -342,14 +342,16 @@ graph TD
     BLK --> WP[Bounded Worker Pool]
     WP --> HP[HttpParser]
     HP --> RT[Router]
-    RT --> MW[Global plus Group Middleware]
-    MW --> H[Route Handler]
+    RT --> MW[Middleware Chain: Logger, Tracing, CORS]
+    MW --> CB{Circuit Breaker?}
+    CB -- OPEN --> 503[503 Service Unavailable]
+    CB -- CLOSED --> H[Route Handler]
     H --> RESP[HttpResponse]
     RESP --> C
 
-    H --> DB[(PostgreSQL or Mongo optional)]
-    RT --> PLG[Plugins: HealthCheck and StaticFiles]
-    PLG --> FS[StaticFileHandler and FileHttpResponse]
+    H --> DB[(PostgreSQL / Mongo / Redis)]
+    H --> OT[OpenTelemetry Exporter]
+    RT --> PLG[Plugins: HealthCheck, StaticFiles, Replay]
 ```
 
 ---
@@ -359,22 +361,23 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant Client
-    participant HttpServer
     participant Worker
-    participant Parser
     participant Router
     participant Middleware
     participant Handler
 
-    Client->>HttpServer: TCP/HTTP request
-    HttpServer->>Worker: Submit connection task
-    Worker->>Parser: Parse headers/body
-    Parser-->>Worker: HttpRequest
-    Worker->>Router: Resolve method + path
-    Router->>Middleware: Build execution chain
-    Middleware->>Handler: Execute business logic
-    Handler-->>Worker: Response via HttpContext
-    Worker-->>Client: HTTP response bytes
+    Client->>Worker: TCP Connection
+    Worker->>Worker: Parse HTTP Request
+    Worker->>Router: Resolve Route
+    alt Route Not Found
+        Router-->>Client: 404 Not Found
+    else Method Not Allowed
+        Router-->>Client: 405 Method Not Allowed
+    else Success
+        Router->>Middleware: Execute Global + Group Hooks
+        Middleware->>Handler: Execute Handler (wrapped in CB/Hedge)
+        Handler-->>Client: 200/201/204 Response
+    end
 ```
 
 ### Threading Model
