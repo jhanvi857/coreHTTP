@@ -25,6 +25,8 @@ services:
       - NIOFLOW_ENABLE_DB=true
       - NIOFLOW_CORS_ORIGIN=${NIOFLOW_CORS_ORIGIN:?NIOFLOW_CORS_ORIGIN is required (e.g. https://yourdomain.com).}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required and must be at least 32 characters.}
+      - NIOFLOW_TRACING_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/_ready >/dev/null || exit 1"]
       interval: 15s
@@ -52,6 +54,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - nioflow-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
     networks:
       - nioflow-net
 
