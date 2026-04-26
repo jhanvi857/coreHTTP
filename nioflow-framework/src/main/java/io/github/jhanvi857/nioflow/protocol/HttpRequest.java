@@ -9,6 +9,7 @@ public class HttpRequest {
     private final String version;
     private final Map<String, String> headers;
     private final byte[] body;
+    private String remoteAddress;
 
     public HttpRequest(String path, String method, String version, Map<String, String> headers, byte[] body) {
         this.path = path;
@@ -45,5 +46,13 @@ public class HttpRequest {
 
     public String getBodyAsString() {
         return new String(body, StandardCharsets.UTF_8);
+    }
+
+    public String getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    public void setRemoteAddress(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
     }
 }

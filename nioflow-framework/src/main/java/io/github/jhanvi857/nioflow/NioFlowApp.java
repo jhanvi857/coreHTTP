@@ -106,6 +106,10 @@ public class NioFlowApp {
         this.activeServer.start(router);
     }
 
+    public int getPort() {
+        return activeServer != null ? activeServer.getPort() : -1;
+    }
+
     public void listenSecure(int port, String keystorePath, String password) {
         try {
             java.security.KeyStore ks = java.security.KeyStore.getInstance("JKS");

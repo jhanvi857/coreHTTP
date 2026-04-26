@@ -45,6 +45,9 @@ public class ConnectionHandler implements Runnable {
                 HttpRequest request;
                 try {
                     request = parser.parse(in);
+                    if (channel.getRemoteAddress() != null) {
+                        request.setRemoteAddress(channel.getRemoteAddress().toString().replace("/", ""));
+                    }
                 } catch (HttpParseException e) {
                     logger.warn("Malformed request from client: {}", e.getMessage());
                     sendErrorResponse(io.github.jhanvi857.nioflow.protocol.HttpStatus.BAD_REQUEST, "Bad Request");
