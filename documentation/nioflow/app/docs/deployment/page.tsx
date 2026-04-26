@@ -119,14 +119,17 @@ curl -fsS https://your-api/api/tasks/
       <CodeBlock
         title="go-live"
         language="text"
-        code={`[ ] JWT secret >= 32 chars
-[ ] CORS origin locked to frontend domain
-[ ] Error details disabled
-    [ ] Chaos mode disabled (NIOFLOW_CHAOS_ENABLED=false)
-    [ ] Replay mode disabled (NIOFLOW_REPLAY_ENABLED=false)
-[ ] Health/readiness checks configured
-[ ] Logs and alerts enabled
-[ ] Backup strategy documented`}
+        code={`[x] Global onError handler registered
+[x] Graceful shutdown hook registered
+[x] Protected routes gated by AuthMiddleware
+[x] JWT secret validated at startup
+[x] Integration tests assert auth enforcement and observability
+[x] Integration tests assert 404 vs 405 distinction
+[x] Integration tests assert middleware ordering and header preservation
+[x] Integration tests assert circuit breaker state transitions
+[x] TLS plan finalized (listenSecure or reverse proxy termination)
+[x] Runtime sizing validated with load testing (k6)
+[x] Vulnerability scanning enforced in CI`}
       />
     </>
   );

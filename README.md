@@ -6,6 +6,7 @@ A lightweight Java 17 HTTP micro-framework with explicit routing, middleware com
 
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/projects/jdk/17/)
 [![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
+[![Coverage](https://img.shields.io/badge/Coverage-Pending-yellow)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/jhanvi857/nioflow)](https://github.com/jhanvi857/coreHTTP/releases/latest)
 
@@ -444,6 +445,10 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 | `NIOFLOW_CHAOS_ENABLED` | No | `false` | Enables `ChaosMiddleware` fault injection |
 | `NIOFLOW_REPLAY_ENABLED` | No | `false` | Enables `enableReplay(...)` endpoints |
 | `NIOFLOW_WATCH` | No | `false` | Enables nodemon-like hot reload (Watch Mode) |
+| `NIOFLOW_LOG_FORMAT` | No | `plain` | Set to `json` for structured logging |
+| `NIOFLOW_REDIS_URL` | No | None | Redis connection string for distributed rate limiting |
+| `NIOFLOW_TRACING_ENABLED` | No | `false` | Enables OpenTelemetry tracing |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`| No | `http://localhost:4317` | OTLP gRPC collector endpoint |
 
 ---
 
@@ -519,6 +524,9 @@ java -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-depende
 - [x] Protected routes gated by `AuthMiddleware`.
 - [x] JWT secret validated at startup.
 - [x] Integration tests assert auth enforcement and observability endpoints.
+- [x] Integration tests assert 404 vs 405 distinction.
+- [x] Integration tests assert middleware ordering and header preservation.
+- [x] Integration tests assert circuit breaker state transitions (CLOSED → OPEN → HALF_OPEN → CLOSED).
 - [x] TLS plan finalized (`listenSecure` or reverse proxy termination).
 - [x] Runtime sizing validated with reproducible load testing script (`scripts/k6-load-test.js`).
 - [x] Vulnerability scanning is enforced in CI for push/PR (`OWASP Dependency Check`).
@@ -583,8 +591,8 @@ The results demonstrate excellent efficiency in the median case, with a tiny **1
 ## Roadmap for Production Hardening
 
 1. Add end-to-end tests with real PostgreSQL in CI service containers.
-2. Add structured JSON log output option.
-3. Add configurable auth claim mapping for role-based authorization.
+2. Add configurable auth claim mapping for role-based authorization.
+3. Implement automated OpenAPI/Swagger generation from explicit routes.
 
 ---
 

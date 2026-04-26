@@ -188,13 +188,19 @@ public class HotReloader {
             }
 
             String module = findModule(mainClass);
+            
+            // 1. Run compile step synchronously first to ensure all modules are ready
+            if (!runBuildCommand(module)) {
+                logger.error("Build failed. Aborting restart.");
+                restarting.set(false);
+                return;
+            }
+
             if (module != null) {
                 command.add("-pl");
                 command.add(module);
-                command.add("-am");
             }
 
-            command.add("compile");
             command.add("exec:java");
             command.add("-Dexec.mainClass=" + mainClass.getName());
             command.add("-D" + CHILD_MARKER + "=true");
@@ -246,7 +252,7 @@ public class HotReloader {
         return null;
     }
 
-    private static boolean runBuildCommand() {
+    private static boolean runBuildCommand(String module) {
         try {
             String os = System.getProperty("os.name").toLowerCase();
             List<String> command = new ArrayList<>();
@@ -259,17 +265,14 @@ public class HotReloader {
                     command.add("Bypass");
                     command.add("-File");
                     command.add("./mvn.ps1");
-                    command.add("compile");
                 } else if (Files.exists(cwd.resolve("mvnw.cmd"))) {
                     command.add("cmd");
                     command.add("/c");
                     command.add("mvnw.cmd");
-                    command.add("compile");
                 } else {
                     command.add("cmd");
                     command.add("/c");
                     command.add("mvn");
-                    command.add("compile");
                 }
             } else {
                 if (Files.exists(cwd.resolve("mvnw"))) {
@@ -277,8 +280,16 @@ public class HotReloader {
                 } else {
                     command.add("mvn");
                 }
-                command.add("compile");
             }
+
+            if (module != null) {
+                command.add("-pl");
+                command.add(module);
+                command.add("-am");
+            }
+            command.add("compile");
+
+            System.out.println("Running build command: " + String.join(" ", command));
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.inheritIO();
@@ -292,14 +303,26 @@ public class HotReloader {
 
     private static synchronized void stopChild() {
         if (childProcess != null && childProcess.isAlive()) {
-            childProcess.destroy();
-            try {
-                if (!childProcess.waitFor(5, TimeUnit.SECONDS)) {
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                try {
+                    // On Windows, killing the parent (Maven/Powershell) might leave the child (Java) alive.
+                    // taskkill /T /F kills the whole tree.
+                    long pid = childProcess.pid();
+                    new ProcessBuilder("taskkill", "/F", "/T", "/PID", String.valueOf(pid)).start().waitFor();
+                } catch (Exception e) {
                     childProcess.destroyForcibly();
                 }
-            } catch (InterruptedException e) {
-                childProcess.destroyForcibly();
-                Thread.currentThread().interrupt();
+            } else {
+                childProcess.destroy();
+                try {
+                    if (!childProcess.waitFor(5, TimeUnit.SECONDS)) {
+                        childProcess.destroyForcibly();
+                    }
+                } catch (InterruptedException e) {
+                    childProcess.destroyForcibly();
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }

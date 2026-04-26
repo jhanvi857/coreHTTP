@@ -13,6 +13,10 @@
     <packaging>jar</packaging>
     <name>Task Planner Example App</name>
     <description>Demo application running on top of NioFlow framework</description>
+    
+    <properties>
+        <exec.skip>false</exec.skip>
+    </properties>
 
     <dependencies>
         <!-- Framework dependency -->
