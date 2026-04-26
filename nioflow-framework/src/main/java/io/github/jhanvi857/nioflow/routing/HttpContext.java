@@ -52,6 +52,10 @@ public class HttpContext {
         return request.getMethod();
     }
 
+    public String remoteAddress() {
+        return request.getRemoteAddress();
+    }
+
     public String routePattern() {
         return routePattern != null ? routePattern : request.getPath();
     }
@@ -103,7 +107,13 @@ public class HttpContext {
     // --- Response Helpers ---
 
     public HttpContext status(HttpStatus status) {
-        this.response = new HttpResponse(status, response.getBody());
+        HttpResponse newResponse = new HttpResponse(status, response.getBody());
+        response.getHeadersMap().forEach((k, v) -> {
+            if (!k.equalsIgnoreCase("Content-Length")) {
+                newResponse.addHeader(k, v);
+            }
+        });
+        this.response = newResponse;
         return this;
     }
 
@@ -117,13 +127,25 @@ public class HttpContext {
     }
 
     public void send(String text) {
-        this.response = new HttpResponse(response.getStatus(), text);
+        HttpResponse newResponse = new HttpResponse(response.getStatus(), text);
+        response.getHeadersMap().forEach((k, v) -> {
+            if (!k.equalsIgnoreCase("Content-Length") && !k.equalsIgnoreCase("Content-Type")) {
+                newResponse.addHeader(k, v);
+            }
+        });
+        this.response = newResponse;
         this.response.addHeader("Content-Type", "text/plain; charset=UTF-8");
     }
 
     public void json(Object data) {
         String jsonString = JsonUtils.toJson(data);
-        this.response = new HttpResponse(response.getStatus(), jsonString);
+        HttpResponse newResponse = new HttpResponse(response.getStatus(), jsonString);
+        response.getHeadersMap().forEach((k, v) -> {
+            if (!k.equalsIgnoreCase("Content-Length") && !k.equalsIgnoreCase("Content-Type")) {
+                newResponse.addHeader(k, v);
+            }
+        });
+        this.response = newResponse;
         this.response.addHeader("Content-Type", "application/json; charset=UTF-8");
     }
 

@@ -29,7 +29,7 @@ public class Route {
     private final String pathDefinition;
     private final Pattern pattern;
     private final List<String> paramNames;
-    private final RouteHandler handler;
+    private RouteHandler handler;
     private volatile int timeoutMs;
     private volatile int hedgeDelayMs;
     private volatile RouteLimiter routeLimiter;
@@ -72,6 +72,10 @@ public class Route {
         if (!this.method.equals(requestMethod) && !this.method.equals("ANY")) {
             return false;
         }
+        return matchesPath(requestPath);
+    }
+
+    public boolean matchesPath(String requestPath) {
         return pattern.matcher(requestPath).matches();
     }
 
@@ -88,6 +92,11 @@ public class Route {
 
     public RouteHandler getHandler() {
         return handler;
+    }
+
+    public void wrap(io.github.jhanvi857.nioflow.middleware.Middleware middleware) {
+        RouteHandler inner = this.handler;
+        this.handler = ctx -> middleware.process(ctx, inner);
     }
 
     public String key() {

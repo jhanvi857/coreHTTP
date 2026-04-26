@@ -101,8 +101,18 @@ public class Router {
         HttpContext ctx = new HttpContext(request, routeExecutor);
 
         if (route == null) {
-            HttpResponse notFound = new HttpResponse(HttpStatus.NOT_FOUND, "<h1>404 Not Found</h1>");
-            ctx.setResponse(notFound);
+            boolean pathMatched = false;
+            for (Route r : routes) {
+                if (r.matchesPath(request.getPath())) {
+                    pathMatched = true;
+                    break;
+                }
+            }
+            if (pathMatched) {
+                ctx.setResponse(new HttpResponse(HttpStatus.METHOD_NOT_ALLOWED, "<h1>405 Method Not Allowed</h1>"));
+            } else {
+                ctx.setResponse(new HttpResponse(HttpStatus.NOT_FOUND, "<h1>404 Not Found</h1>"));
+            }
             return ctx;
         }
 

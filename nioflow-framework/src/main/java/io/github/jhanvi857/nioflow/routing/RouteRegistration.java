@@ -24,4 +24,9 @@ public class RouteRegistration {
         route.hedge(delayMs);
         return this;
     }
+
+    public RouteRegistration use(io.github.jhanvi857.nioflow.middleware.Middleware middleware) {
+        route.wrap(middleware);
+        return this;
+    }
 }

@@ -23,6 +23,7 @@ import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 public class HttpServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
     private final int port;
+    private int boundPort;
     private final ThreadPoolExecutor threadPool;
     private final int socketReadTimeoutMs;
     private volatile boolean running = false;
@@ -52,6 +53,7 @@ public class HttpServer {
                 TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity));
 
+        this.boundPort = -1;
         logger.info("Thread pool initialized with {} workers and queue capacity of {}", workerThreads, queueCapacity);
         logger.info("Socket read timeout set to {}ms", socketReadTimeoutMs);
     }
@@ -69,6 +71,7 @@ public class HttpServer {
             // 2. Open the server channel to accept new client connections.
             ServerSocketChannel serverChannel = ServerSocketChannel.open();
             serverChannel.bind(new InetSocketAddress(port));
+            this.boundPort = ((InetSocketAddress) serverChannel.getLocalAddress()).getPort();
 
             // set non-blocking mode
             serverChannel.configureBlocking(false);
@@ -211,6 +214,10 @@ public class HttpServer {
             threadPool.shutdownNow();
             Thread.currentThread().interrupt();
         }
+    }
+
+    public int getPort() {
+        return boundPort;
     }
 
     private static int readIntSetting(String propertyKey, String envKey, int defaultValue, int minValue) {
