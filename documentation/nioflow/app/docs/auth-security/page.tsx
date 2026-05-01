@@ -47,6 +47,12 @@ app.post("/api/auth/login", ctx -> {
       />
 
       <H2 id="security-baseline">Security Baseline</H2>
+      <div className="my-4 border-l-4 border-red-500 bg-red-900/20 p-4 rounded-r-lg">
+        <p className="text-red-400 font-bold mb-1">⚠️ CRITICAL: Never disable auth in production</p>
+        <p className="text-sm text-red-300">
+          The <code className="bg-black/30 px-1 rounded">NIOFLOW_DISABLE_AUTH=true</code> flag is documented for local development convenience. <strong>It bypasses all JWT validation.</strong> You must never set this in a production environment, as it leaves all protected routes fully exposed.
+        </p>
+      </div>
       <CodeBlock
         title="env-security"
         language="bash"

@@ -14,13 +14,13 @@ export default function ShowcasePage() {
       <main className="w-full max-w-[1200px] mx-auto px-6 py-16 md:py-24 relative z-10">
         <header className="mb-16 border-b border-[#1a1a1a] pb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium border border-[#333] rounded-full bg-[#111] mb-8 shadow-sm">
-            <span className="flex h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
-            <span className="text-gray-300">Operations Console</span>
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] animate-pulse" />
+            <span className="text-gray-300">Benchmark Simulation</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Live Runtime Snapshot</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Load Test Snapshot</h1>
           <p className="max-w-3xl text-lg text-gray-400 leading-relaxed">
             Operational visibility for traffic, infrastructure health, and middleware execution path.
-            This view mirrors what production teams monitor during rollout and incident response.
+            This view represents simulated load test data from our k6 benchmarking suite, not a live production dashboard.
           </p>
         </header>
 
@@ -43,16 +43,16 @@ export default function ShowcasePage() {
 
             <div className="grid grid-cols-3 gap-6 pt-6 border-t border-[#222] mt-auto">
               <div>
-                <p className="text-[11px] font-bold text-gray-500 font-mono tracking-widest mb-2 uppercase">Requests</p>
-                <p className="text-3xl font-bold text-gray-200 tracking-tight">1.2M</p>
+                <p className="text-[11px] font-bold text-gray-500 font-mono tracking-widest mb-2 uppercase">Requests/s</p>
+                <p className="text-3xl font-bold text-gray-200 tracking-tight">501</p>
               </div>
               <div>
                 <p className="text-[11px] font-bold text-gray-500 font-mono tracking-widest mb-2 uppercase">P95 Latency</p>
-                <p className="text-3xl font-bold text-gray-200 tracking-tight">6.1ms</p>
+                <p className="text-3xl font-bold text-gray-200 tracking-tight">47.75ms</p>
               </div>
               <div>
                 <p className="text-[11px] font-bold text-gray-500 font-mono tracking-widest mb-2 uppercase">Error Rate</p>
-                <p className="text-3xl font-bold text-green-500 tracking-tight drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">0.01%</p>
+                <p className="text-3xl font-bold text-green-500 tracking-tight drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">0.16%</p>
               </div>
             </div>
           </article>

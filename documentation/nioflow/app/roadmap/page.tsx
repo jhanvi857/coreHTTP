@@ -108,15 +108,21 @@ export default function RoadmapPage() {
         </section>
 
         <section className="rounded-2xl border border-[#202020] bg-[#101010] p-6 md:p-8 mt-8">
-          <h2 className="text-2xl font-bold tracking-tight mb-4">What Comes Next</h2>
-          <p className="text-gray-400 leading-relaxed mb-3">
-            Upcoming roadmap detail will move from phase-based outcomes to release-based tracking, so teams can map
-            specific framework improvements to version upgrades.
-          </p>
-          <p className="text-gray-400 leading-relaxed">
-            Planned additions include richer middleware extension points, enhanced diagnostics, and deeper deployment
-            templates for container-first and cloud-native workflows.
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight mb-4">Production Hardening</h2>
+          <ul className="space-y-4">
+            <li className="flex items-start gap-4 text-gray-400 text-[15px] leading-relaxed">
+              <span className="text-[#444] font-mono mt-0.5">{`>`}</span>
+              <span>Add end-to-end tests with real PostgreSQL in CI service containers.</span>
+            </li>
+            <li className="flex items-start gap-4 text-gray-400 text-[15px] leading-relaxed">
+              <span className="text-[#444] font-mono mt-0.5">{`>`}</span>
+              <span>Add configurable auth claim mapping for role-based authorization.</span>
+            </li>
+            <li className="flex items-start gap-4 text-gray-400 text-[15px] leading-relaxed">
+              <span className="text-[#444] font-mono mt-0.5">{`>`}</span>
+              <span>Implement automated OpenAPI/Swagger generation from explicit routes.</span>
+            </li>
+          </ul>
         </section>
       </main>
 

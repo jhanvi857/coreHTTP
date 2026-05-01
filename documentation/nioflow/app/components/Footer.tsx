@@ -41,8 +41,6 @@ export default function Footer() {
             <h3 className="mb-4 font-semibold text-black dark:text-white">Legal</h3>
             <ul className="space-y-3">
               <li><Link href="https://github.com/jhanvi857/coreHTTP" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors">GitHub</Link></li>
-              <li><span className="text-gray-500 dark:text-gray-400">Privacy Policy</span></li>
-              <li><span className="text-gray-500 dark:text-gray-400">Terms of Service</span></li>
             </ul>
           </div>
         </div>

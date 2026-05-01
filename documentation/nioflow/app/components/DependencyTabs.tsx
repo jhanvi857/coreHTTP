@@ -6,11 +6,11 @@ const DEPENDENCIES = {
   Maven: `<dependency>
   <groupId>io.github.jhanvi857</groupId>
   <artifactId>nioflow-framework</artifactId>
-  <version>1.1.0</version>
+  <version>1.0.0</version>
 </dependency>`,
-  Gradle: `implementation 'io.github.jhanvi857:nioflow-framework:1.1.0'`,
-  "Gradle (Kotlin)": `implementation("io.github.jhanvi857:nioflow-framework:1.1.0")`,
-  SBT: `libraryDependencies += "io.github.jhanvi857" % "nioflow-framework" % "1.1.0"`
+  Gradle: `implementation 'io.github.jhanvi857:nioflow-framework:1.0.0'`,
+  "Gradle (Kotlin)": `implementation("io.github.jhanvi857:nioflow-framework:1.0.0")`,
+  SBT: `libraryDependencies += "io.github.jhanvi857" % "nioflow-framework" % "1.0.0"`
 };
 
 export default function DependencyTabs() {
