@@ -316,6 +316,7 @@ app.enableReplay(50);
 - `GET /_replay` lists recorded requests.
 - `POST /_replay/:index` replays through current live pipeline and returns original vs current response.
 - Sensitive headers (`Authorization`, `Cookie`, `X-API-Key`) are stripped automatically.
+- **SECURITY WARNING**: The replay buffer endpoints are exposed without authentication by default. In production, you must either disable replay (`NIOFLOW_REPLAY_ENABLED=false`) or secure the `/_replay` routes behind your own authentication middleware to prevent leaking request paths and payloads to unauthorized users.
 
 ### 6. Hot Reload (Watch Mode)
 

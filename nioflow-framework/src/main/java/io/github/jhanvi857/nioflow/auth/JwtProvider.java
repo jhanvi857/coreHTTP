@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JwtProvider {
+    @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
     private static final long EXPIRATION_TIME = 86400000; // 24 hr.
     private static final SecretKey SECRET_KEY;
@@ -22,9 +23,8 @@ public class JwtProvider {
             keyStr = System.getenv("JWT_SECRET");
         }
         if (keyStr == null || keyStr.length() < 32) {
-            logger.warn("JWT_SECRET not configured or too short. JwtProvider will not be functional. "
-                    + "Set JWT_SECRET env var (min 32 chars) to enable JWT authentication.");
-            SECRET_KEY = null;
+            throw new IllegalStateException(
+                    "JWT_SECRET environment variable is missing or too short (min 32 chars required for security).");
         } else {
             SECRET_KEY = Keys.hmacShaKeyFor(keyStr.getBytes(StandardCharsets.UTF_8));
         }
