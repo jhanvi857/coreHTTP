@@ -32,7 +32,7 @@ public class NioFlowApp {
      * that restarts on file changes.
      * 
      * @param mainClass The main class of your application
-     * @param args The command line arguments passed to main
+     * @param args      The command line arguments passed to main
      */
     public static void enableHotReload(Class<?> mainClass, String[] args) {
         HotReloader.setup(mainClass, args);
@@ -65,7 +65,8 @@ public class NioFlowApp {
 
     public NioFlowApp group(String prefix,
             java.util.function.Consumer<io.github.jhanvi857.nioflow.routing.RouteGroup> config) {
-        io.github.jhanvi857.nioflow.routing.RouteGroup group = new io.github.jhanvi857.nioflow.routing.RouteGroup(prefix, router);
+        io.github.jhanvi857.nioflow.routing.RouteGroup group = new io.github.jhanvi857.nioflow.routing.RouteGroup(
+                prefix, router);
         config.accept(group);
         return this;
     }

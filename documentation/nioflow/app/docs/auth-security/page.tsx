@@ -59,8 +59,8 @@ app.post("/api/auth/login", ctx -> {
         code={`JWT_SECRET=replace-with-32-plus-char-secret
 NIOFLOW_CORS_ORIGIN=https://your-frontend.app
 NIOFLOW_ENABLE_DB=false
-    NIOFLOW_CHAOS_ENABLED=false
-    NIOFLOW_REPLAY_ENABLED=false
+NIOFLOW_CHAOS_ENABLED=false
+NIOFLOW_REPLAY_ENABLED=false
 NIOFLOW_EXPOSE_ERROR_DETAILS=false`}
       />
 
