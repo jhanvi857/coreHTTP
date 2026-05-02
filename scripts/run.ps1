@@ -9,7 +9,7 @@ Push-Location $ProjectRoot
 
 try {
     Write-Host "Building project with Maven..." -ForegroundColor Cyan
-    & $MvnScript clean compile
+    & $MvnScript clean install
 
     if ($LASTEXITCODE -ne 0) {
         throw "Maven build failed."
