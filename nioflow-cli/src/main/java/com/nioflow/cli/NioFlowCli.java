@@ -33,7 +33,7 @@ public class NioFlowCli {
             switch (command) {
                 case "--version":
                 case "-v":
-                    System.out.println("nioflow-cli 1.0.0");
+                    System.out.println("nioflow-cli 1.2.0");
                     break;
                 case "help":
                 case "--help":
@@ -241,7 +241,7 @@ public class NioFlowCli {
                 "        <dependency>\n" +
                 "            <groupId>io.github.jhanvi857</groupId>\n" +
                 "            <artifactId>nioflow-framework</artifactId>\n" +
-                "            <version>1.0.0</version>\n" +
+                "            <version>1.3.0</version>\n" +
                 "        </dependency>\n" +
                 "    </dependencies>\n" +
                 "\n" +
@@ -286,6 +286,7 @@ public class NioFlowCli {
                 "\n" +
                 "public class App {\n" +
                 "    public static void main(String[] args) {\n" +
+                "        NioFlowApp.enableHotReload(App.class, args);\n" +
                 "        NioFlowApp app = new NioFlowApp();\n" +
                 "        \n" +
                 "        app.get(\"/\", ctx -> {\n" +
