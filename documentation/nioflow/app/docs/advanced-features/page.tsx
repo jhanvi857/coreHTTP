@@ -1,3 +1,4 @@
+import { Pagination } from "../_components";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -145,7 +146,34 @@ export default function AdvancedFeaturesPage() {
             <li>Monitors source directory and restarts via child process.</li>
           </ul>
         </section>
+
+        <section className="rounded-xl border border-muted bg-card-dark p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-900/30 text-yellow-400 font-mono text-xs font-bold border border-yellow-500/30">
+              07
+            </div>
+            <h3 className="text-xl font-bold text-white">NioFlow CLI (NPM)</h3>
+          </div>
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+            A Node.js powered tool to scaffold, run, and manage Java projects with a modern developer experience.
+          </p>
+          <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
+            {`# Fast scaffolding and management
+nioflow new my-app
+nioflow run
+nioflow dev`}
+          </div>
+          <ul className="mt-4 space-y-2 text-sm text-gray-500 list-disc list-inside">
+            <li>Zero-configuration scaffolding with Maven Wrapper integration.</li>
+            <li>Single-command project execution and hot-reloading.</li>
+            <li>Installable globally via <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">npm install -g @jhanvi857/nioflow-cli</code>.</li>
+          </ul>
+        </section>
       </div>
+      <Pagination 
+        prev={{ href: "/docs/database-env", label: "Database + Env" }}
+        next={{ href: "/docs/deployment", label: "Operations + Deployment" }}
+      />
     </article>
   );
 }

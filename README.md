@@ -8,7 +8,8 @@ A lightweight Java 17 HTTP micro-framework with explicit routing, middleware com
 [![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
 [![Coverage](https://img.shields.io/badge/Coverage-Pending-yellow)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/jhanvi857/nioflow)](https://github.com/jhanvi857/coreHTTP/releases/latest)
+[![Release](https://img.shields.io/github/v/release/jhanvi857/nioflow)](https://github.com/jhanvi857/coreHTTP/releases/tag/v1.3.0)
+[![NPM Version](https://img.shields.io/npm/v/@jhanvi857/nioflow-cli)](https://www.npmjs.com/package/@jhanvi857/nioflow-cli)
 
 NioFlow is designed around one principle: make HTTP internals understandable without sacrificing production behavior. Instead of hiding complexity behind annotations and reflection-heavy bootstrapping, NioFlow keeps transport, parsing, routing, middleware, and error handling explicit and testable.
 
@@ -101,22 +102,22 @@ Runtime.getRuntime().addShutdownHook(
 
 ---
 
-## Quick Start
-
 ### Install CLI (Recommended)
 
-Requires Node.js (for the installer) and JDK 17+ (for runtime).
+The NioFlow CLI handles scaffolding, environment setup, and hot-reloading for you. Requires Node.js (for the installer) and JDK 17+.
 
 ```bash
-npm install -g nioflow-cli
+npm install -g @jhanvi857/nioflow-cli
 
-# Create and run project
+# Create a project
 nioflow new my-app
 cd my-app
+
+# Start with hot-reload
 nioflow dev
 ```
 
-> **Note:** Node.js is only used to distribute the CLI globally. Your application compiles and runs purely on Java.
+> **Note:** Node.js is only used to distribute the CLI. Your application runs purely on Java.
 
 ### Manual Setup (Without CLI)
 
@@ -611,9 +612,11 @@ The results demonstrate excellent efficiency in the median case, with a tiny **1
 
 ## Roadmap for Production Hardening
 
-1. Add end-to-end tests with real PostgreSQL in CI service containers.
-2. Add configurable auth claim mapping for role-based authorization.
-3. Implement automated OpenAPI/Swagger generation from explicit routes.
+1. ✅ CLI Tooling (npm)
+2. ✅ Structured JSON Logging
+3. ✅ OpenTelemetry Integration
+4. 🏗️ Automated OpenAPI/Swagger generation from explicit routes.
+5. 🏗️ Configurable auth claim mapping for RBAC.
 
 ---
 

@@ -1,4 +1,4 @@
-import { CodeBlock, H2, P } from "../_components";
+import { CodeBlock, H2, P, Pagination } from "../_components";
 
 export default function ReferencePage() {
   return (
@@ -119,6 +119,10 @@ ctx.status(HttpStatus.UNAUTHORIZED).json(java.util.Map.of("error", "auth require
 - per-route request/error/timeout/hedge counts
 - per-route p50/p95/p99 latencies
 - circuit breaker state per route-group`}
+      />
+      <Pagination 
+        prev={{ href: "/docs/deployment", label: "Operations + Deployment" }}
+        next={{ href: "/docs/performance", label: "Performance Benchmarks" }}
       />
     </>
   );

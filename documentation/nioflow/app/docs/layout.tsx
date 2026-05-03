@@ -1,13 +1,28 @@
+'use client';
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 
-const SidebarLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <li>
-    <a href={href} className="block py-1.5 text-[14px] text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors">
-      {children}
-    </a>
-  </li>
-);
+const SidebarLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <li>
+      <Link 
+        href={href} 
+        className={`block py-1.5 px-3 text-[14px] rounded-lg transition-all ${
+          isActive 
+            ? "text-blue-500 bg-blue-500/5 font-medium border-l-2 border-blue-500" 
+            : "text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-l-2 border-transparent"
+        }`}
+      >
+        {children}
+      </Link>
+    </li>
+  );
+};
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (

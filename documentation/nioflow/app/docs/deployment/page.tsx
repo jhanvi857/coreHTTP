@@ -1,4 +1,4 @@
-import { CodeBlock, H2, P } from "../_components";
+import { CodeBlock, H2, P, Pagination } from "../_components";
 
 export default function DeploymentPage() {
   return (
@@ -22,6 +22,18 @@ export default function DeploymentPage() {
 3) Inject environment-specific variables at runtime
 4) Validate /_ready before accepting traffic
 5) Roll forward or roll back based on health + logs`}
+      />
+
+      <h2>Production Build with CLI</h2>
+      <P>You can use the CLI to package your application for deployment. This generates the fat JAR in your target directory.</P>
+      <CodeBlock
+        title="cli-build"
+        language="bash"
+        code={`# From project root
+./mvnw clean package -DskipTests
+
+# Runnable artifact will be in:
+# target/my-app-1.0-SNAPSHOT-jar-with-dependencies.jar`}
       />
 
       <H2 id="environment-variables">Required Environment Variables</H2>
@@ -135,6 +147,10 @@ curl -fsS https://your-api/api/tasks/
 [x] TLS plan finalized (listenSecure or reverse proxy termination)
 [x] Runtime sizing validated with load testing (k6)
 [x] Vulnerability scanning enforced in CI`}
+      />
+      <Pagination 
+        prev={{ href: "/docs/advanced-features", label: "Advanced Features" }}
+        next={{ href: "/docs/reference", label: "API Reference" }}
       />
     </>
   );

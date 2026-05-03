@@ -1,4 +1,4 @@
-import { CodeBlock, H2, P } from "../_components";
+import { CodeBlock, H2, P, Pagination } from "../_components";
 
 export default function RoutingFrontendPage() {
   return (
@@ -70,6 +70,10 @@ export async function fetchTasks(token) {
 
   return res.json();
 }`}
+      />
+      <Pagination 
+        prev={{ href: "/docs/getting-started", label: "Getting Started" }}
+        next={{ href: "/docs/auth-security", label: "Auth + Security" }}
       />
     </>
   );
