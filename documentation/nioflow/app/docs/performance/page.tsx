@@ -1,4 +1,4 @@
-import { CodeBlock, H2, H3, P } from "../_components";
+import { CodeBlock, H2, H3, P, Pagination } from "../_components";
 
 export default function PerformancePage() {
   return (
@@ -101,6 +101,10 @@ export default function () {
         title="Run Command"
         language="bash"
         code={`k6 run load_test.js`}
+      />
+      <Pagination 
+        prev={{ href: "/docs/reference", label: "API Reference" }}
+        next={{ href: "/docs", label: "Professional Framework Guide" }}
       />
     </>
   );

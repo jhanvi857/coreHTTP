@@ -14,7 +14,7 @@ export default function Home() {
 
       <main className="flex-1 w-full flex flex-col items-center">
         {/* HERO SECTION */}
-        <section className="relative w-full pt-32 pb-24 flex flex-col items-center justify-center border-b border-[#1a1a1a] overflow-hidden bg-black/80">
+        <section className="relative w-full pt-24 pb-24 flex flex-col items-center justify-center border-b border-[#1a1a1a] overflow-hidden bg-black/80">
           {/* Subtle Grid Background */}
           {/* <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" /> */}
 
@@ -67,20 +67,109 @@ export default function Home() {
                 </div>
                 <div className="p-6 font-mono text-[13px] text-gray-300 leading-relaxed h-[320px] overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0e0e11] bottom-0 h-full w-full z-10 pointer-events-none" />
-                  <p><span className="text-green-400">$</span> ./scripts/run.ps1</p>
-                  <p className="text-gray-500 mt-2">[INFO] Bootstrap: Initializing Server Components...</p>
-                  <p className="text-gray-500">[INFO] Security: Loaded keystore.jks, enabling Native TLS</p>
-                  <p className="text-gray-500">[INFO] Database: JDBC pool active on Async Executor ThreadPool</p>
-                  <p className="text-gray-500">[INFO] NIO: Registering ServerSocketChannel on 0.0.0.0:443</p>
-                  <p className="text-blue-400 mb-4">[READY] Selector Event Loop started successfully.</p>
-                  <p className="mt-4"><span className="text-green-400">$</span> curl -X GET https://localhost/api/health</p>
+                  <p><span className="text-green-400">$</span> npm install -g @jhanvi857/nioflow-cli</p>
+                  <p className="text-gray-500 mt-2">[INFO] nioflow: Linked global binary successfully.</p>
+                  <p><span className="text-green-400">$</span> nioflow dev</p>
+                  <p className="text-gray-500 mt-2">[INFO] Watcher: Monitoring src/main/java...</p>
+                  <p className="text-gray-500">[INFO] Bootstrap: Starting NioFlow v1.3.0</p>
+                  <p className="text-gray-500">[INFO] NIO: ServerSocketChannel on 0.0.0.0:8080</p>
+                  <p className="text-blue-400 mb-4">[READY] Application live with Hot Reload enabled.</p>
+                  <p className="mt-4"><span className="text-green-400">$</span> curl http://localhost:8080/metrics</p>
                   <p className="text-yellow-400 mt-2">HTTP/1.1 200 OK</p>
-                  <p className="text-gray-400">Content-Type: application/json</p>
-                  <p className="text-gray-300 mt-2">{`{ "status": "UP", "uptime": "0ms" }`}</p>
+                  <p className="text-gray-300 mt-2">{`{ "req_total": 1205, "p95_ms": 47.7 }`}</p>
                 </div>
               </div>
             </div>
 
+          </div>
+        </section>
+
+        {/* QUICK INSTALL SECTION */}
+        <section className="w-full py-16 border-b border-[#1a1a1a] bg-[#080808]">
+          <div className="max-w-[1200px] mx-auto px-6">
+            <div className="flex flex-col md:flex-row items-center gap-12">
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold mb-4 text-white">Fast Track Installation</h2>
+                <p className="text-gray-400 mb-6">
+                  Get up and running in seconds. The NioFlow CLI manages your Java environment, dependencies, and project scaffolding so you can focus on building routes.
+                </p>
+                <ul className="space-y-3 text-sm text-gray-500 mb-8">
+                  <li className="flex items-center gap-2">
+                    <span className="text-blue-500 font-bold">✓</span> No manual JAR downloads required
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-blue-500 font-bold">✓</span> Automatic Maven Wrapper integration
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-blue-500 font-bold">✓</span> Cross-platform support (Windows, macOS, Linux)
+                  </li>
+                </ul>
+              </div>
+              <div className="flex-1 w-full max-w-lg">
+                <div className="bg-black border border-[#333] rounded-xl p-6 font-mono text-[14px]">
+                  <div className="flex justify-between items-center mb-4 border-b border-[#222] pb-2">
+                    <span className="text-gray-500 text-xs uppercase tracking-widest">Global Setup</span>
+                    <span className="text-blue-400 text-xs">v1.3.0</span>
+                  </div>
+                  <p className="text-blue-300"># Install the CLI</p>
+                  <p className="text-white mb-4">npm install -g @jhanvi857/nioflow-cli</p>
+                  <p className="text-blue-300"># Scaffold & Start</p>
+                  <p className="text-white">nioflow new my-app</p>
+                  <p className="text-white">cd my-app</p>
+                  <p className="text-white">nioflow dev</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ADVANCED FEATURES SHOWCASE */}
+        <section className="w-full py-24 bg-black">
+          <div className="max-w-[1200px] mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Production Resilience Pack</h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                Stop worrying about infrastructure. NioFlow ships with native middleware for resilience and observability that you normally spend weeks configuring.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Chaos Middleware */}
+              <div className="p-6 rounded-xl border border-[#222] bg-[#0e0e0e] hover:border-blue-500/50 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  CHS
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Chaos Injection</h3>
+                <p className="text-sm text-gray-500 mb-4">Validate frontend resilience by injecting latency and errors into your routes.</p>
+                <div className="bg-black p-3 rounded font-mono text-[11px] text-blue-300/80">
+                  {`app.use(new ChaosMiddleware()\n   .latency(200, 0.1));`}
+                </div>
+              </div>
+
+              {/* Circuit Breaker */}
+              <div className="p-6 rounded-xl border border-[#222] bg-[#0e0e0e] hover:border-blue-500/50 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  CBR
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Circuit Breaker</h3>
+                <p className="text-sm text-gray-500 mb-4">Fast-fail when downstream services are struggling to prevent cascading outages.</p>
+                <div className="bg-black p-3 rounded font-mono text-[11px] text-blue-300/80">
+                  {`group.use(new CircuitBreaker()\n   .threshold(0.5));`}
+                </div>
+              </div>
+
+              {/* Request Replay */}
+              <div className="p-6 rounded-xl border border-[#222] bg-[#0e0e0e] hover:border-blue-500/50 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  RPL
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Request Replay</h3>
+                <p className="text-sm text-gray-500 mb-4">Record and replay production-like requests locally for rapid debugging.</p>
+                <div className="bg-black p-3 rounded font-mono text-[11px] text-blue-300/80">
+                  {`app.enableReplay(50);`}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -98,6 +187,17 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-8">
               {/* Feature 1 */}
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  CLI
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Zero-Config CLI</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Scaffold, run, and hot-reload projects using our NPM-distributed CLI. Bridge the gap between Java performance and modern DX with <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-[13px]">nioflow dev</code>.
+                </p>
+              </div>
+
+              {/* Feature 2 */}
               <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
                 <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
                   NIO
@@ -163,14 +263,36 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Feature 7 - NEW */}
+              {/* Feature 7 */}
               <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
                 <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
-                  ENV
+                  OTEL
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-white">Environment Management</h3>
+                <h3 className="text-xl font-bold mb-3 text-white">Observability Pack</h3>
                 <p className="text-gray-400 leading-relaxed text-[15px]">
-                  Automatic <code>.env</code> file detection. Keep your Supabase keys and JWT secrets safe by loading them into the framework without manual command line arguments.
+                  Native OpenTelemetry tracing, Prometheus metrics, and structured JSON logging. Get full visibility into your distributed system with zero external agents.
+                </p>
+              </div>
+
+              {/* Feature 8 */}
+              {/* <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  JWT
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Stateless Security</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Integrated password hashing and JWT issuance. Secure your route groups with zero-configuration middleware and enterprise-grade signing defaults.
+                </p>
+              </div> */}
+
+              {/* Feature 9 */}
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  HED
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Request Hedging</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Native tail-latency reduction. Automatically fire backup requests when primary executions cross latency thresholds to keep p99s consistently low.
                 </p>
               </div>
             </div>

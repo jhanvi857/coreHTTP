@@ -106,3 +106,32 @@ export const WarningCallout = ({ title, children }: { title: string; children: R
   </div>
 );
 
+export const Pagination = ({ 
+  prev, 
+  next 
+}: { 
+  prev?: { href: string; label: string }; 
+  next?: { href: string; label: string } 
+}) => (
+  <div className="mt-20 pt-10 border-t border-muted flex flex-col sm:flex-row items-center justify-between gap-4">
+    {prev ? (
+      <Link 
+        href={prev.href} 
+        className="group flex flex-col items-start p-4 rounded-xl border border-muted hover:border-blue-500/50 hover:bg-blue-500/5 transition-all w-full sm:w-auto min-w-[200px]"
+      >
+        <span className="text-xs text-gray-500 uppercase tracking-widest mb-1 group-hover:text-blue-500 transition-colors">Previous</span>
+        <span className="text-base font-semibold text-primary">{prev.label}</span>
+      </Link>
+    ) : <div />}
+    
+    {next ? (
+      <Link 
+        href={next.href} 
+        className="group flex flex-col items-end p-4 rounded-xl border border-muted hover:border-blue-500/50 hover:bg-blue-500/5 transition-all w-full sm:w-auto min-w-[200px] text-right"
+      >
+        <span className="text-xs text-gray-500 uppercase tracking-widest mb-1 group-hover:text-blue-500 transition-colors">Next</span>
+        <span className="text-base font-semibold text-primary">{next.label}</span>
+      </Link>
+    ) : <div />}
+  </div>
+);

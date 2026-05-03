@@ -1,4 +1,4 @@
-import { CodeBlock, H2, H3, P } from "../_components";
+import { CodeBlock, H2, H3, P, Pagination } from "../_components";
 
 export default function GettingStartedPage() {
   return (
@@ -6,32 +6,36 @@ export default function GettingStartedPage() {
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-gray-900 dark:text-white">Getting Started</h1>
       <P>Everything a new user needs to download, install, and run NioFlow quickly.</P>
 
-      <H2 id="download-options">Download Options</H2>
-      <H3>Maven Users (recommended)</H3>
-      <P>Maven gives dependency management, reproducible builds, and easiest upgrades.</P>
+      <H2 id="download-options">Installation</H2>
+      <H3>NioFlow CLI (Recommended)</H3>
+      <P>The fastest way to get started. The CLI handles scaffolding, environment setup, and Maven management for you.</P>
+      <CodeBlock
+        title="install-cli"
+        language="bash"
+        code={`# Install globally
+npm install -g @jhanvi857/nioflow-cli
+
+# Scaffold a new project
+nioflow new my-app
+cd my-app
+
+# Start development with hot-reload
+nioflow dev`}
+      />
+
+      <H3>Manual Maven Dependency</H3>
+      <P>If you prefer managing your own pom.xml, add the dependency directly.</P>
       <CodeBlock
         title="pom.xml"
         language="xml"
         code={`<dependency>
   <groupId>io.github.jhanvi857</groupId>
   <artifactId>nioflow-framework</artifactId>
-  <version>1.0.0</version>
+  <version>1.2.0</version>
 </dependency>`}
       />
 
-      <H3>Without Maven</H3>
-      <P>Download nioflow-framework-1.0.0.jar and checksum from GitHub Releases.</P>
-      <CodeBlock
-        title="manual-jar"
-        language="bash"
-        code={`# Linux/macOS
-javac -cp nioflow-framework-1.0.0.jar App.java
-java -cp nioflow-framework-1.0.0.jar:. App
 
-# Windows PowerShell
-javac -cp .\\nioflow-framework-1.0.0.jar App.java
-java -cp .\\nioflow-framework-1.0.0.jar;. App`}
-      />
 
       <H2 id="setup-project">Setup Your First App</H2>
       <CodeBlock
@@ -117,6 +121,11 @@ app.listen(port);`}
   src/main/resources/public/
     index.html
   pom.xml`}
+      />
+
+      <Pagination 
+        prev={{ href: "/docs", label: "Professional Framework Guide" }}
+        next={{ href: "/docs/routing-frontend", label: "Routing + Frontend" }}
       />
     </>
   );

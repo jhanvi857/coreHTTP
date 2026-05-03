@@ -1,4 +1,4 @@
-import { CodeBlock, InfoCallout, WarningCallout } from "../_components";
+import { CodeBlock, InfoCallout, WarningCallout, Pagination } from "../_components";
 
 export default function DatabaseEnvPage() {
   return (
@@ -128,21 +128,10 @@ boolean isDebug = Env.getAsBoolean("DEBUG_MODE", false);`}
         />
       </section>
 
-      {/* FOOTER NAV */}
-      <div className="pt-12 flex justify-between gap-4">
-        <a href="/docs/auth-security" className="flex-1 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#111] transition-all group">
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Previous</div>
-          <div className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors flex items-center gap-2">
-            ← Auth + Security
-          </div>
-        </a>
-        <a href="/docs/deployment" className="flex-1 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#111] transition-all group text-right">
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Next</div>
-          <div className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors flex items-center justify-end gap-2">
-            Operations + Deployment →
-          </div>
-        </a>
-      </div>
+      <Pagination 
+        prev={{ href: "/docs/auth-security", label: "Auth + Security" }}
+        next={{ href: "/docs/advanced-features", label: "Advanced Features" }}
+      />
     </div>
   );
 }

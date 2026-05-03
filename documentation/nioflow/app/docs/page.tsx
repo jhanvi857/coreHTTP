@@ -1,4 +1,4 @@
-import { SectionCard } from "./_components";
+import { SectionCard, Pagination } from "./_components";
 import Link from "next/link";
 
 
@@ -72,24 +72,21 @@ export default function DocsHomePage() {
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         <article className="rounded-xl border border-muted bg-surface p-5">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Recommended Learning Path</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            Follow sections in order. Each page is designed to prepare the next one, so you avoid missing env,
-            middleware, or deployment prerequisites.
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Guided Learning Path</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+            Follow sections in order. Each page prepares the next, ensuring no environment or deployment prerequisites are missed.
           </p>
         </article>
         <article className="rounded-xl border border-muted bg-surface p-5">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Code-First Explanations</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            Examples are intentionally complete, not pseudo-code. You can use snippets directly in your project,
-            then incrementally adapt naming and structure.
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Production-Readiness</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+            Examples are complete, not pseudo-code.Copy snippets directly into your project and adapt structure as needed.
           </p>
         </article>
         <article className="rounded-xl border border-muted bg-surface p-5">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Production Mindset</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            Docs prioritize safe defaults: explicit CORS origin, strong JWT secret, controlled error exposure,
-            health probes, and release reproducibility.
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Security-First Focus</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+            Docs prioritize safe defaults: explicit CORS, strong JWT secrets, and health probes by default.
           </p>
         </article>
       </section>
@@ -98,7 +95,7 @@ export default function DocsHomePage() {
         <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">Architecture At A Glance</h2>
         <div className="mb-5 rounded-xl border border-muted bg-[#0e0e11] p-4 md:p-5 overflow-x-auto">
           <pre className="text-xs md:text-sm text-gray-200 leading-relaxed">
-{`Client
+            {`Client
   -> Selector accept loop
   -> Accepted SocketChannel (blocking mode for parser)
   -> Bounded worker pool
@@ -154,6 +151,9 @@ export default function DocsHomePage() {
         </div>
       </section>
 
+      <Pagination
+        next={{ href: "/docs/getting-started", label: "Getting Started" }}
+      />
     </>
   );
 }
