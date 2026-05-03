@@ -1,0 +1,14 @@
+{
+  "name": "@jhanvi857/nioflow-cli",
+  "version": "1.0.1",
+  "description": "CLI tool for NioFlow Java HTTP framework",
+  "bin": {
+    "nioflow": "./bin/nioflow.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}
