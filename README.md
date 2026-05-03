@@ -103,7 +103,24 @@ Runtime.getRuntime().addShutdownHook(
 
 ## Quick Start
 
-### Prerequisites
+### Install CLI (Recommended)
+
+Requires Node.js (for the installer) and JDK 17+ (for runtime).
+
+```bash
+npm install -g nioflow-cli
+
+# Create and run project
+nioflow new my-app
+cd my-app
+nioflow dev
+```
+
+> **Note:** Node.js is only used to distribute the CLI globally. Your application compiles and runs purely on Java.
+
+### Manual Setup (Without CLI)
+
+#### Prerequisites
 
 - JDK 17+
 - Maven 3.9+

@@ -31,6 +31,15 @@ public class NioFlowCli {
 
         try {
             switch (command) {
+                case "--version":
+                case "-v":
+                    System.out.println("nioflow-cli 1.0.0");
+                    break;
+                case "help":
+                case "--help":
+                case "-h":
+                    printUsage();
+                    break;
                 case "new":
                     if (args.length < 2) {
                         error("Missing project name. Usage: nioflow new <project-name>");
@@ -56,7 +65,9 @@ public class NioFlowCli {
 
     private static void checkJavaVersion() {
         String version = System.getProperty("java.version");
-        if (version.startsWith("1.") || Integer.parseInt(version.split("\\.")[0]) < 17) {
+        String major = version.split("[.\\-+]")[0];
+        int majorVersion = Integer.parseInt(major);
+        if (majorVersion < 17) {
             error("Java 17 or higher is required. Found: " + version);
             System.exit(1);
         }
@@ -91,7 +102,10 @@ public class NioFlowCli {
                 info("Aborted.");
                 return;
             }
-            deleteDirectory(dir);
+            if (!deleteDirectory(dir)) {
+                error("Failed to delete existing directory. Check file permissions.");
+                return;
+            }
         }
 
         if (!dir.mkdirs()) {
@@ -102,6 +116,7 @@ public class NioFlowCli {
         // Generate files
         writeStringToFile(new File(dir, "pom.xml"), getPomTemplate(projectName));
         writeStringToFile(new File(dir, ".env.example"), getEnvTemplate());
+        writeStringToFile(new File(dir, ".env"), getEnvTemplate());
         writeStringToFile(new File(dir, "nioflow.json"), getNioFlowJsonTemplate());
         writeStringToFile(new File(dir, ".gitignore"), getGitIgnoreTemplate());
 
@@ -114,23 +129,26 @@ public class NioFlowCli {
         copyResource("/scaffold/mvnw.cmd", new File(dir, "mvnw.cmd"), true);
         File wrapperDir = new File(dir, ".mvn/wrapper");
         wrapperDir.mkdirs();
-        copyResource("/scaffold/.mvn/wrapper/maven-wrapper.properties", new File(wrapperDir, "maven-wrapper.properties"), false);
+        copyResource("/scaffold/.mvn/wrapper/maven-wrapper.properties",
+                new File(wrapperDir, "maven-wrapper.properties"), false);
 
         success("Project " + projectName + " created successfully.");
         info("To get started:");
         info("  cd " + projectName);
+        info("  Edit .env with your secrets before running");
         info("  nioflow dev");
     }
 
     private static void copyResource(String resourcePath, File dest, boolean executable) throws IOException {
         InputStream is = NioFlowCli.class.getResourceAsStream(resourcePath);
         if (is == null) {
-            info("Warning: Could not find resource " + resourcePath + " in CLI jar. Maven wrapper won't be fully set up.");
+            info("Warning: Could not find resource " + resourcePath
+                    + " in CLI jar. Maven wrapper won't be fully set up.");
             return;
         }
         Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
         if (executable) {
-            dest.setExecutable(true);
+            dest.setExecutable(true, false);
         }
     }
 
@@ -151,24 +169,27 @@ public class NioFlowCli {
 
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String mvnw = isWindows ? ".\\mvnw.cmd" : "./mvnw";
-        
+
         File wrapperFile = new File(isWindows ? "mvnw.cmd" : "mvnw");
         if (!wrapperFile.exists()) {
             error("Maven wrapper not found in current directory. Cannot execute.");
             System.exit(1);
         }
 
-        ProcessBuilder pb = new ProcessBuilder(
-                mvnw, "clean", "compile", "exec:java", "-Dexec.mainClass=" + mainClass
-        );
+        ProcessBuilder pb;
+        if (devMode) {
+            pb = new ProcessBuilder(mvnw, "clean", "compile", "exec:java", "-Dexec.mainClass=" + mainClass);
+        } else {
+            pb = new ProcessBuilder(mvnw, "compile", "exec:java", "-Dexec.mainClass=" + mainClass);
+        }
 
         pb.inheritIO();
         pb.environment().put("NIOFLOW_WATCH", devMode ? "true" : "false");
-        
+
         info("Starting " + (devMode ? "dev" : "run") + " mode...");
         Process process = pb.start();
         int exitCode = process.waitFor();
-        
+
         if (exitCode != 0) {
             error("Process exited with code " + exitCode);
             System.exit(exitCode);
@@ -202,7 +223,8 @@ public class NioFlowCli {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n" +
                 "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-                "         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n" +
+                "         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n"
+                +
                 "    <modelVersion>4.0.0</modelVersion>\n" +
                 "\n" +
                 "    <groupId>com.example</groupId>\n" +
@@ -236,7 +258,7 @@ public class NioFlowCli {
     }
 
     private static String getEnvTemplate() {
-        return "JWT_SECRET=supersecretkey\n" +
+        return "JWT_SECRET=replace-this-with-a-32-plus-character-secret-key\n" +
                 "PORT=8080\n" +
                 "NIOFLOW_CHAOS_ENABLED=false\n" +
                 "NIOFLOW_REPLAY_ENABLED=false\n" +
@@ -246,7 +268,8 @@ public class NioFlowCli {
     private static String getNioFlowJsonTemplate() {
         return "{\n" +
                 "  \"mainClass\": \"com.example.App\",\n" +
-                "  \"port\": 8080\n" +
+                "  \"port\": 8080,\n" +
+                "  \"nioflowVersion\": \"1.0.0\"\n" +
                 "}\n";
     }
 
