@@ -1,15 +1,8 @@
 # NioFlow
-<p align="center">
-<img src="image.png" alt="NioFlow Logo" width="600">
-</p>
+
 A lightweight Java 17 HTTP micro-framework with explicit routing, middleware composition, and production-focused runtime controls.
 
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org/projects/jdk/17/)
-[![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
-[![Coverage](https://img.shields.io/badge/Coverage-Pending-yellow)](#)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/jhanvi857/nioflow)](https://github.com/jhanvi857/coreHTTP/releases/tag/v1.3.0)
-[![NPM Version](https://img.shields.io/npm/v/@jhanvi857/nioflow-cli)](https://www.npmjs.com/package/@jhanvi857/nioflow-cli)
+[Java 17+](https://openjdk.org/projects/jdk/17/) | [Maven 3.9+](https://maven.apache.org/) | [Coverage: Pending](#) | [License: MIT](LICENSE) | [Release: v1.3.0](https://github.com/jhanvi857/coreHTTP/releases/tag/v1.3.0) | [NPM: @jhanvi857/nioflow-cli](https://www.npmjs.com/package/@jhanvi857/nioflow-cli)
 
 NioFlow is designed around one principle: make HTTP internals understandable without sacrificing production behavior. Instead of hiding complexity behind annotations and reflection-heavy bootstrapping, NioFlow keeps transport, parsing, routing, middleware, and error handling explicit and testable.
 
@@ -18,57 +11,125 @@ NioFlow is designed around one principle: make HTTP internals understandable wit
 ## Table of Contents
 
 - [What NioFlow Is](#what-nioflow-is)
-- [Key Capabilities](#key-capabilities)
-- [Quick Start](#quick-start)
-- [Documentation Site](#documentation-site)
+- [Architecture Deep Dive](#architecture-deep-dive)
+- [NioFlow CLI (Recommended)](#nioflow-cli-recommended)
+- [Step-by-Step Quick Start](#step-by-step-quick-start)
 - [Framework Programming Model](#framework-programming-model)
 - [Advanced Feature Pack](#advanced-feature-pack)
-- [Architecture Deep Dive](#architecture-deep-dive)
 - [Security Model](#security-model)
 - [Configuration Matrix](#configuration-matrix)
-- [Deployment Guide](#deployment-guide)
+- [Database Integration](#database-integration)
 - [Repository Structure](#repository-structure)
-- [Roadmap for Production Hardening](#roadmap-for-production-hardening)
+- [Performance Benchmarks](#performance-benchmarks)
+- [Roadmap](#roadmap)
 
 ---
 
 ## What NioFlow Is
 
-NioFlow is a two-part system:
+NioFlow is a high-performance system composed of:
+1. **nioflow-framework:** The core reusable HTTP engine.
+2. **task-planner-app:** A reference implementation demonstrating production patterns.
 
-1. `nioflow-framework`: reusable HTTP framework module.
-2. `task-planner-app`: reference application that demonstrates how to use the framework in a real service.
-
-It sits between "build a server from scratch" and "adopt a massive framework":
-
-| Concern | NioFlow Approach | Why It Matters |
+| Concern | NioFlow Approach | Impact |
 |:---|:---|:---|
-| Connection accept | NIO selector loop | High connection scalability with low idle overhead |
-| Request handling | Bounded worker pool | Predictable behavior under load |
-| Routing | Explicit code-based routes | Easy debugging and refactoring |
-| Middleware | Global + route-group scoped | Clear policy layering (auth, rate limits, CORS) |
-| Errors | Per-type handlers + global fallback | No stack trace leakage |
-| Shutdown | Graceful draining via `drainAndStop` | Safer rolling restarts |
+| Connection Accept | NIO Selector Loop | High scalability with minimal idle overhead. |
+| Request Handling | Bounded Worker Pool | Predictable performance under high load. |
+| Routing | Explicit Programmatic Routes | Type-safe debugging and refactoring. |
+| Middleware | Global and Group Scoped | Clean policy layering (Auth, CORS, Rate Limits). |
+| Error Handling | Per-type Handlers | Prevents internal stack trace leakage. |
+| Lifecycle | Graceful Drain and Stop | Safe rolling deployments. |
 
 ---
 
-## Key Capabilities
+## Architecture Deep Dive
 
-### 1. Explicit Route Registration
+### Runtime Topology
+NioFlow utilizes a tiered architecture to isolate I/O management from business logic.
 
-```java
-NioFlowApp app = new NioFlowApp();
-
-app.get("/", ctx -> ctx.send("Hello"));
-app.get("/api/tasks/:id", taskController::get);
-
-app.group("/api/admin", group -> {
-    group.use(new AuthMiddleware());
-    group.get("/stats", adminController::stats);
-});
+```mermaid
+graph TD
+    C[Client] --> SEL[Selector Accept Loop]
+    SEL --> ACC[Accept SocketChannel]
+    ACC --> BLK[Configure Blocking Mode for Parser]
+    BLK --> WP[Bounded Worker Pool]
+    WP --> HP[HttpParser]
+    HP --> RT[Router]
+    RT --> MW[Middleware Chain]
+    MW --> CB{Circuit Breaker?}
+    CB -- OPEN --> 503[503 Service Unavailable]
+    CB -- CLOSED --> H[Route Handler]
+    H --> RESP[HttpResponse]
+    RESP --> C
 ```
 
-### 2. Middleware Pipeline
+---
+
+## NioFlow CLI (Recommended)
+
+The CLI is the primary management tool for NioFlow projects. It handles scaffolding, environment orchestration, and hot-reloading.
+
+### 1. Installation
+Requires Node.js and JDK 17+.
+
+```bash
+npm install -g @jhanvi857/nioflow-cli
+```
+
+### 2. Command Reference
+
+| Command | Usage | Description |
+| :--- | :--- | :--- |
+| **new** | `nioflow new <project-name>` | Scaffolds a production-ready project with security defaults. |
+| **dev** | `nioflow dev` | Starts the server with a file watcher for instant hot-reloading. |
+| **run** | `nioflow run` | Compiles and executes the application in standard mode. |
+| **help** | `nioflow --help` | Displays version info and command documentation. |
+
+---
+
+## Step-by-Step Quick Start
+
+### 1. Scaffolding
+Create a new project and navigate to the root directory.
+
+```bash
+nioflow new my-app
+cd my-app
+```
+
+### 2. Environment Setup
+The CLI generates a `.env` file automatically.
+
+```env
+PORT=8080
+JWT_SECRET=your-random-32-char-secret
+NIOFLOW_CORS_ORIGIN=http://localhost:3000
+```
+
+### 3. Writing Your First Route
+Open `App.java` and define a basic endpoint.
+
+```java
+public class App {
+    public static void main(String[] args) {
+        NioFlowApp app = new NioFlowApp();
+        app.get("/api/status", ctx -> ctx.json(Map.of("status", "online")));
+        app.listen(8080);
+    }
+}
+```
+
+### 4. Running the Application
+```bash
+nioflow dev
+```
+
+---
+
+## Framework Programming Model
+
+### Middleware Pipeline
+Middleware executes in registration order and is wrapped around each resolved route handler.
 
 ```java
 app.use(new LoggerMiddleware());
@@ -76,10 +137,7 @@ app.use(new CorsMiddleware("https://yourdomain.com"));
 app.use(new RateLimitMiddleware(100, 10_000));
 ```
 
-Middleware executes in registration order and is wrapped around each resolved route handler.
-
-### 3. Global Error Control
-
+### Global Error Control
 ```java
 app.exception(IllegalArgumentException.class, (e, ctx) -> {
     ctx.status(400).json(Map.of("error", "Bad Request", "details", e.getMessage()));
@@ -90,492 +148,56 @@ app.onError((err, ctx) -> {
 });
 ```
 
-### 4. TLS Entry Point + Graceful Stop
-
-```java
-app.listenSecure(443, "keystore.jks", "changeit");
-
-Runtime.getRuntime().addShutdownHook(
-    new Thread(() -> app.drainAndStop(30, TimeUnit.SECONDS))
-);
-```
-
----
-
-### Install CLI (Recommended)
-
-The NioFlow CLI handles scaffolding, environment setup, and hot-reloading for you. Requires Node.js (for the installer) and JDK 17+.
-
-```bash
-npm install -g @jhanvi857/nioflow-cli
-
-# Create a project
-nioflow new my-app
-cd my-app
-
-# Start with hot-reload
-nioflow dev
-```
-
-> **Note:** Node.js is only used to distribute the CLI. Your application runs purely on Java.
-
-### Manual Setup (Without CLI)
-
-#### Prerequisites
-
-- JDK 17+
-- Maven 3.9+
-
-### 0. Configure environment
-
-Create a local `.env` from the example and set a strong JWT secret:
-
-```bash
-cp .env.example .env
-```
-
-Windows PowerShell alternative:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-At minimum, set:
-
-- `JWT_SECRET` (32+ characters)
-- `NIOFLOW_CORS_ORIGIN` (frontend origin)
-- `DB_PASS` (if `NIOFLOW_ENABLE_DB=true`)
-
-### 1. Build all modules
-
-```bash
-# From repository root
-./mvnw clean test
-```
-
-Windows PowerShell alternative:
-
-```powershell
-.\mvn.ps1 clean test
-```
-
-### 2. Run the reference app
-
-```bash
-./mvnw exec:java -pl task-planner-app \
-  -Dexec.mainClass=io.github.jhanvi857.taskplanner.DemoApplication \
-  -Dnioflow.jwtSecret=your-very-long-secret-at-least-32-chars
-```
-
-### 3. Verify endpoints
-
-```bash
-curl http://localhost:8080/_health
-curl http://localhost:8080/_ready
-curl http://localhost:8080/metrics
-curl http://localhost:8080/api/tasks/
-```
-
-Expected behavior:
-
-- `/_health` returns `200` with JSON payload.
-- `/_ready` returns `200` when dependencies are ready (`503` if DB mode is enabled but DB is unavailable).
-- `/metrics` returns `200` with metrics report.
-- `/api/tasks/` returns `401` without bearer token.
-
----
-
-## Documentation Site
-
-The repository also includes a dedicated Next.js documentation portal in:
-
-```text
-documentation/nioflow
-```
-
-Run it locally:
-
-```bash
-cd documentation/nioflow
-npm install
-npm run dev
-```
-
-Then open `http://localhost:3000`.
-
----
-
-## Framework Programming Model
-
-### App Bootstrap Pattern
-
-```java
-public class MyService {
-    public static void main(String[] args) {
-        NioFlowApp app = new NioFlowApp();
-
-        app.use(new LoggerMiddleware());
-        app.use(new CorsMiddleware("https://yourdomain.com"));
-
-        app.get("/", ctx -> ctx.send("Service up"));
-
-        app.group("/api/private", group -> {
-            group.use(new AuthMiddleware());
-            group.get("/profile", profileController::getProfile);
-        });
-
-        app.onError((err, ctx) -> {
-            ctx.status(500).json(Map.of("error", "Internal Server Error"));
-        });
-
-        Runtime.getRuntime().addShutdownHook(
-            new Thread(() -> app.drainAndStop(30, TimeUnit.SECONDS))
-        );
-
-        app.listen(8080);
-    }
-}
-```
-
-### Route Parameters and Context API
-
-```java
-app.get("/api/tasks/:id", ctx -> {
-    String id = ctx.pathParam("id");
-    String auth = ctx.header("Authorization");
-
-    ctx.status(200).json(Map.of(
-        "taskId", id,
-        "authorized", auth != null
-    ));
-});
-```
-
-### Async Repository Pattern (JDBC Offload)
-
-```java
-public CompletableFuture<Optional<Task>> findById(Long id) {
-    return CompletableFuture.supplyAsync(() -> {
-        // Blocking JDBC work isolated in dedicated DB executor
-        // so request workers are not permanently blocked by DB I/O.
-    }, dbExecutor);
-}
-```
-
 ---
 
 ## Advanced Feature Pack
 
-NioFlow now includes five opt-in features designed for small teams operating production services without heavy platform infrastructure.
-
-### 1. ChaosMiddleware (controlled fault injection)
-
-```java
-app.use(
-    new ChaosMiddleware()
-        .latency(200, 0.10)
-        .error(500, 0.05)
-        .drop(0.01)
-);
-```
-
-- Guarded by `NIOFLOW_CHAOS_ENABLED=true`.
-- Logs each injected fault with route and path.
-- Supports composable latency, error, and drop behavior.
-
-### 2. Per-route observability and protection (fluent API)
-
-```java
-app.get("/api/orders", ordersController::list)
-   .timeout(2000)
-   .rateLimit(50, 10_000);
-```
-
-- Per-route request/error counters.
-- Per-route p50/p95/p99 latency (sliding in-memory window).
-- Route-scoped timeout and route-scoped rate limit.
-
-### 3. Request hedging for tail-latency reduction
-
-```java
-app.get("/api/search", searchController::search)
-   .hedge(100);
-```
-
-- Fires a backup execution when primary crosses threshold.
-- Returns first successful completion.
-- Hedge trigger count appears in route-level metrics.
-
-### 4. Route-group scoped circuit breaker middleware
-
-```java
-app.group("/api/downstream", group -> {
-    group.use(new CircuitBreakerMiddleware()
-        .threshold(0.5)
-        .windowSize(20)
-        .cooldown(10_000));
-
-    group.get("/inventory", inventoryController::read);
-});
-```
-
-- CLOSED / OPEN / HALF_OPEN states.
-- OPEN returns `503` and `Retry-After` header.
-- Circuit state is exposed per route-group in `/metrics` output.
-
-### 5. Request replay for fast debugging
-
-```java
-app.enableReplay(50);
-```
-
-- Guarded by `NIOFLOW_REPLAY_ENABLED=true`.
-- Captures recent requests in circular memory buffer.
-- `GET /_replay` lists recorded requests.
-- `POST /_replay/:index` replays through current live pipeline and returns original vs current response.
-- Sensitive headers (`Authorization`, `Cookie`, `X-API-Key`) are stripped automatically.
-- **SECURITY WARNING**: The replay buffer endpoints are exposed without authentication by default. In production, you must either disable replay (`NIOFLOW_REPLAY_ENABLED=false`) or secure the `/_replay` routes behind your own authentication middleware to prevent leaking request paths and payloads to unauthorized users.
-
-### 6. Hot Reload (Watch Mode)
-
-```java
-NioFlowApp.enableHotReload(DemoApplication.class, args);
-```
-
-- Guarded by `NIOFLOW_WATCH=true`.
-- Monitors source directory for changes.
-- Automatically recompiles using Maven (`mvn`, `mvnw`, or `mvn.ps1`).
-- Restarts the application in a child process for near-instant developer feedback.
-
----
-
-## Architecture Deep Dive
-
-### Runtime Topology
-
-```mermaid
-graph TD
-    C[Client] --> SEL[Selector Accept Loop]
-    SEL --> ACC[Accept SocketChannel]
-    ACC --> BLK[Configure blocking mode for worker parsing]
-    BLK --> WP[Bounded Worker Pool]
-    WP --> HP[HttpParser]
-    HP --> RT[Router]
-    RT --> MW[Middleware Chain: Logger, Tracing, CORS]
-    MW --> CB{Circuit Breaker?}
-    CB -- OPEN --> 503[503 Service Unavailable]
-    CB -- CLOSED --> H[Route Handler]
-    H --> RESP[HttpResponse]
-    RESP --> C
-
-    H --> DB[(PostgreSQL / Mongo / Redis)]
-    H --> OT[OpenTelemetry Exporter]
-    RT --> PLG[Plugins: HealthCheck, StaticFiles, Replay]
-```
-
----
-
-### Request Lifecycle Sequence
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Worker
-    participant Router
-    participant Middleware
-    participant Handler
-
-    Client->>Worker: TCP Connection
-    Worker->>Worker: Parse HTTP Request
-    Worker->>Router: Resolve Route
-    alt Route Not Found
-        Router-->>Client: 404 Not Found
-    else Method Not Allowed
-        Router-->>Client: 405 Method Not Allowed
-    else Success
-        Router->>Middleware: Execute Global + Group Hooks
-        Middleware->>Handler: Execute Handler (wrapped in CB/Hedge)
-        Handler-->>Client: 200/201/204 Response
-    end
-```
-
-### Threading Model
-
-- Accept path: NIO selector thread.
-- Request work path: bounded worker pool.
-- Database path: dedicated DB executor pool.
-
-This split protects the server from unbounded queue growth and improves backpressure behavior under load.
+| Feature | Description | Implementation |
+|:---|:---|:---|
+| **Chaos Injection** | Controlled fault injection. | `app.use(new ChaosMiddleware().latency(200, 0.1))` |
+| **Route Protection** | Granular per-route limits. | `route.timeout(2000).rateLimit(50, 10_000)` |
+| **Request Hedging** | Tail-latency reduction. | `route.hedge(100)` |
+| **Circuit Breaker** | Cascading failure prevention. | `group.use(new CircuitBreakerMiddleware())` |
+| **Request Replay** | Fast local debugging. | `app.enableReplay(50)` |
 
 ---
 
 ## Security Model
 
-### Authentication
-
-- Protected route groups use `AuthMiddleware`.
-- Token format: `Authorization: Bearer <jwt>`.
-- JWT key source: `JWT_SECRET` (env) or `-Dnioflow.jwtSecret=...`.
-- Startup behavior in reference app: exits if JWT secret is missing or too short.
-
-### Request Hardening
-
-| Control | Current Behavior |
+| Control | Implementation |
 |:---|:---|
-| Header size cap | 8 KB maximum |
-| Body size cap | 10 MB maximum |
-| Unsupported framing | Rejects invalid Transfer-Encoding/Content-Length combos |
-| Rate limiting | Per client key with sliding window |
-| Error responses | Sanitized with explicit exception handlers |
-
-### CORS Strategy
-
-```java
-String corsOrigin = System.getenv("NIOFLOW_CORS_ORIGIN");
-if (corsOrigin == null || corsOrigin.isBlank()) {
-    corsOrigin = "http://localhost:3000";
-}
-app.use(new CorsMiddleware(corsOrigin));
-```
-
-For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
+| Authentication | JWT via `AuthMiddleware` and `JwtProvider`. |
+| Password Security | Argon2 hashing via `PasswordHasher`. |
+| Protocol Security | Native TLS support via `listenSecure`. |
+| Request Hardening | 8KB Header Cap, 10MB Body Cap, Sanitized Errors. |
 
 ---
 
 ## Configuration Matrix
 
-| Variable / Property | Required | Default | Purpose |
+| Variable | Required | Default | Purpose |
 |:---|:---|:---|:---|
-| `PORT` | No | `8080` | Server port |
-| `JWT_SECRET` | Yes unless auth disabled | None | JWT secret used by `AuthMiddleware` |
-| `NIOFLOW_DISABLE_AUTH` | No | `false` | Disable JWT checks for protected groups (dev only) |
-| `NIOFLOW_CORS_ORIGIN` | Recommended | `http://localhost:3000` | CORS allow-origin value |
-| `NIOFLOW_ENABLE_DB` | No | `false` | Enables DB-backed readiness checks and repository behavior |
-| `JDBC_URL` | If DB enabled | `jdbc:postgresql://localhost:5432/nioflow` | PostgreSQL URL |
-| `DB_USER` | If DB enabled | `postgres` | PostgreSQL user |
-| `DB_PASS` | If DB enabled | None | PostgreSQL password |
-| `MONGO_URI` | No | None | Optional MongoDB URI (enables `initMongo`) |
-| `NIOFLOW_THREADS` / `nioflow.threads` | No | `64` | Worker pool size in `HttpServer` |
-| `NIOFLOW_QUEUE_CAPACITY` / `nioflow.queueCapacity` | No | `1000` | Worker queue capacity for backpressure |
-| `NIOFLOW_SOCKET_TIMEOUT_MS` / `nioflow.socketTimeoutMs` | No | `30000` | Socket read timeout per connection |
-| `NIOFLOW_TLS_ENABLED` | No | `false` | Enable native TLS listener |
-| `NIOFLOW_TLS_KEYSTORE_PATH` | If TLS enabled | None | JKS keystore path |
-| `NIOFLOW_TLS_KEYSTORE_PASSWORD` | If TLS enabled | None | Keystore password |
-| `NIOFLOW_TLS_PORT` | No | `8443` | Native TLS listener port |
-| `NIOFLOW_EXPOSE_ERROR_DETAILS` | No | `false` | Include exception details in error payloads |
-| `NIOFLOW_STATIC_DIR` / `nioflow.staticDir` | No | Auto-resolve | Static files directory |
-| `NIOFLOW_CHAOS_ENABLED` | No | `false` | Enables `ChaosMiddleware` fault injection |
-| `NIOFLOW_REPLAY_ENABLED` | No | `false` | Enables `enableReplay(...)` endpoints |
-| `NIOFLOW_WATCH` | No | `false` | Enables nodemon-like hot reload (Watch Mode) |
-| `NIOFLOW_LOG_FORMAT` | No | `plain` | Set to `json` for structured logging |
-| `NIOFLOW_REDIS_URL` | No | None | Redis connection string for distributed rate limiting |
-| `NIOFLOW_TRACING_ENABLED` | No | `false` | Enables OpenTelemetry tracing |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`| No | `http://localhost:4317` | OTLP gRPC collector endpoint |
+| `PORT` | No | `8080` | Server listener port. |
+| `JWT_SECRET` | Yes | None | Secret for JWT signing (min 32 chars). |
+| `NIOFLOW_CORS_ORIGIN`| No | `http://localhost:3000` | Allowed CORS origin. |
+| `NIOFLOW_CHAOS_ENABLED`| No | `false` | Enable/Disable Chaos middleware. |
+| `NIOFLOW_WATCH` | No | `false` | Enable/Disable Hot Reload mode. |
+| `NIOFLOW_LOG_FORMAT` | No | `plain` | Set to `json` for structured logging. |
 
 ---
 
 ## Database Integration
 
-NioFlow provides a centralized `Database` utility to manage your persistence layers with zero boilerplate.
+NioFlow provides a centralized `Database` utility to manage persistence with zero boilerplate.
 
-### 1. PostgreSQL (Supabase / Local)
-Initialize and get connections directly:
 ```java
 NioFlowApp app = new NioFlowApp();
-// Reads JDBC_URL from .env
-app.initPostgres(); 
+app.initPostgres(); // Reads from .env automatically
 
 try (Connection conn = Database.getPostgresConnection()) {
     // Standard JDBC logic
 }
 ```
-
-### 2. MongoDB (Atlas / Local, optional)
-Initialize and access the document store:
-```java
-// Reads MONGO_URI from .env
-app.initMongo(); 
-
-MongoClient mongo = Database.getMongoClient();
-MongoDatabase db = mongo.getDatabase("nioflow");
-```
-
----
-
-## Environment Variable Management
-
-NioFlow includes a built-in `Env` utility that automatically loads configuration from a `.env` file in your project root. This ensures that sensitive keys (like Supabase secrets) remain safe and are not passed via command line arguments.
-
-**Example `.env` file:**
-```env
-JDBC_URL=jdbc:postgresql://your-db.supabase.co:5432/postgres
-DB_USER=postgres
-DB_PASS=your-password
-JWT_SECRET=your-32-char-secret
-PORT=8080
-```
-
----
-
-## Deployment Guide
-
-### Build Artifacts
-
-```bash
-./mvnw package -DskipTests -pl task-planner-app -am
-```
-
-Primary runnable artifact:
-
-```text
-task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-dependencies.jar
-```
-
-### Run as Plain JVM Service (non-Docker)
-
-With the new `.env` support, you no longer need complex `-D` flags:
-
-```bash
-java -jar task-planner-app/target/task-planner-app-1.0-SNAPSHOT-jar-with-dependencies.jar
-```
-
-### Production Checklist
-
-- [x] Global `onError` handler registered.
-- [x] Graceful shutdown hook registered.
-- [x] Protected routes gated by `AuthMiddleware`.
-- [x] JWT secret validated at startup.
-- [x] Integration tests assert auth enforcement and observability endpoints.
-- [x] Integration tests assert 404 vs 405 distinction.
-- [x] Integration tests assert middleware ordering and header preservation.
-- [x] Integration tests assert circuit breaker state transitions (CLOSED → OPEN → HALF_OPEN → CLOSED).
-- [x] TLS plan finalized (`listenSecure` or reverse proxy termination).
-- [x] Runtime sizing validated with reproducible load testing script (`scripts/k6-load-test.js`).
-- [x] Vulnerability scanning is enforced in CI for push/PR (`OWASP Dependency Check`).
-
----
-
-## Performance Benchmarks
-
-NioFlow is designed for high-performance NIO-based request handling. Below are the results of a standardized load test conducted against the `task-planner-app` reference implementation.
-
-### Test Environment & Setup
-- **Tooling:** k6 v1.7.1
-- **Endpoint:** `GET /_health` (unauthenticated)
-- **Profile:** Graduated ramp-up from 0 to 100 Virtual Users (VUs) over 2 minutes.
-- **Hardware:** Local execution on Windows (Consumer-grade CPU/RAM).
-
-### Key Metrics
-| Metric | Result |
-| :--- | :--- |
-| **Throughput** | **501.12 requests/second** |
-| **Median Latency (p50)** | **1.52 ms** |
-| **p95 Latency** | **47.75 ms** |
-| **p99 Latency** | **74.62 ms** |
-| **Success Rate** | **99.84%** (0.16% error rate at peak 100 VUs) |
-
-### Analysis
-The results demonstrate excellent efficiency in the median case, with a tiny **1.52ms overhead** for request parsing and routing. At peak load (100 concurrent VUs), the server reached its configured worker pool limit (64 threads), resulting in queuing delays (reflected in the p99 latency) and a negligible number of connection refusals (0.16%) once the OS listen backlog was fully saturated.
 
 ---
 
@@ -583,53 +205,37 @@ The results demonstrate excellent efficiency in the median case, with a tiny **1
 
 ```text
 .
-├── nioflow-framework/
-│   └── src/main/java/io/github/jhanvi857/nioflow/
-│       ├── auth/            # JWT provider and auth primitives
-│       ├── exception/       # Exception handlers and mapping
-│       ├── middleware/      # Logger, CORS, auth, rate limit, metrics
-│       ├── observability/   # Health handlers
-│       ├── plugin/          # Plugin registration points
-│       ├── protocol/        # Parser, request, response models
-│       ├── routing/         # Route, router, groups, context
-│       └── server/          # NIO accept loop and connection handlers
-│
-├── task-planner-app/
-│   └── src/main/java/io/github/jhanvi857/taskplanner/
-│       ├── controller/      # HTTP-facing handlers
-│       ├── repository/      # JDBC access wrapped in futures
-│       ├── db/              # Hikari and DB bootstrap
-│       └── DemoApplication.java
-│
-├── documentation/nioflow/   # Next.js documentation portal
-├── .github/workflows/       # CI build/test/security checks
-├── Dockerfile               # Multi-stage image build
-├── docker-compose.yml       # App + Postgres local stack
-└── runbook.md               # Operational procedures
+├── nioflow-framework/       # Core HTTP engine
+├── nioflow-cli/             # Java-based CLI source
+├── nioflow-cli-npm/         # Node.js CLI distribution
+├── task-planner-app/        # Reference implementation
+├── documentation/nioflow/   # Next.js docs portal
+└── scripts/                 # Benchmarking and ops scripts
 ```
 
 ---
 
-## Roadmap for Production Hardening
+## Performance Benchmarks
 
-1. ✅ CLI Tooling (npm)
-2. ✅ Structured JSON Logging
-3. ✅ OpenTelemetry Integration
-4. 🏗️ Automated OpenAPI/Swagger generation from explicit routes.
-5. 🏗️ Configurable auth claim mapping for RBAC.
+Measured using k6 (v1.7.1) against the v1.3.0 health endpoint.
 
----
-
-## Credits & Attribution
-
-This project is authored and maintained by **Jhanvi Patel** (jhanvi857). 
-
-### Dependencies & Third-Party Code
-- **Environment Management**: Powered by [dotenv-java](https://github.com/cdimascio/dotenv-java) by **io.github.cdimascio**. Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). 
-- **Networking**: Core architectural patterns for the NIO engine were derived from industry-standard high-performance Java server implementations. We honor all original authors and adhere to open-source compliance.
+| Metric | Result |
+| :--- | :--- |
+| **Throughput** | **501.12 requests/second** |
+| **Median Latency (p50)** | **1.52 ms** |
+| **Tail Latency (p99)** | **74.62 ms** |
+| **Success Rate** | **99.84%** |
 
 ---
 
-## License
+## Roadmap
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1.  **CLI Tooling:** Global NPM distribution and scaffolding. (Completed)
+2.  **Structured Observability:** JSON logging and Prometheus. (Completed)
+3.  **OpenAPI Generation:** Automated Swagger/OpenAPI specs. (In Progress)
+4.  **RBAC Support:** Native role-based access control. (Planned)
+
+---
+
+**Authored by Jhanvi Patel**
+[Official Documentation](https://nioflow-docs.vercel.app)
