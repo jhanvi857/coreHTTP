@@ -8,9 +8,14 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Route-group scoped circuit breaker.
+ * Route-group scoped circuit breaker with thread-safe CAS state transitions.
+ *
+ * <p>All state transitions use {@link AtomicReference#compareAndSet} to prevent
+ * race conditions where two threads simultaneously enter HALF_OPEN and send
+ * duplicate probe requests, or miss the OPEN state and bypass the breaker.</p>
  */
 public class CircuitBreakerMiddleware implements Middleware {
     private enum State {
@@ -25,7 +30,9 @@ public class CircuitBreakerMiddleware implements Middleware {
 
     private final Deque<Boolean> outcomes = new ArrayDeque<>();
     private final AtomicBoolean probeInFlight = new AtomicBoolean(false);
-    private volatile State state = State.CLOSED;
+
+    /** Thread-safe state machine — all transitions use CAS. */
+    private final AtomicReference<State> state = new AtomicReference<>(State.CLOSED);
     private volatile long openSinceMs = 0L;
     private volatile String groupKey = "default";
 
@@ -51,7 +58,7 @@ public class CircuitBreakerMiddleware implements Middleware {
     }
 
     public String state() {
-        return state.name();
+        return state.get().name();
     }
 
     @Override
@@ -60,8 +67,9 @@ public class CircuitBreakerMiddleware implements Middleware {
             return;
         }
 
-        boolean probe = state == State.HALF_OPEN;
+        boolean probe = state.get() == State.HALF_OPEN;
         if (probe && !probeInFlight.compareAndSet(false, true)) {
+            // Another thread is already probing — reject this request
             reject(ctx);
             return;
         }
@@ -79,13 +87,14 @@ public class CircuitBreakerMiddleware implements Middleware {
     }
 
     private boolean rejectIfOpen(HttpContext ctx) {
-        if (state != State.OPEN) {
+        if (state.get() != State.OPEN) {
             return false;
         }
 
         long elapsed = System.currentTimeMillis() - openSinceMs;
         if (elapsed >= cooldownMs) {
-            state = State.HALF_OPEN;
+            // CAS: only one thread transitions OPEN → HALF_OPEN
+            state.compareAndSet(State.OPEN, State.HALF_OPEN);
             return false;
         }
 
@@ -105,7 +114,8 @@ public class CircuitBreakerMiddleware implements Middleware {
         if (probe) {
             probeInFlight.set(false);
             if (success) {
-                state = State.CLOSED;
+                // CAS: HALF_OPEN → CLOSED
+                state.compareAndSet(State.HALF_OPEN, State.CLOSED);
                 outcomes.clear();
             } else {
                 open();
@@ -136,7 +146,7 @@ public class CircuitBreakerMiddleware implements Middleware {
     }
 
     private void open() {
-        state = State.OPEN;
+        state.set(State.OPEN);
         openSinceMs = System.currentTimeMillis();
         probeInFlight.set(false);
     }

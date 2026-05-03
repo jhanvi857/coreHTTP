@@ -10,6 +10,7 @@ public enum HttpStatus {
     NOT_FOUND(404, "Not Found"),
     METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
     REQUEST_TIMEOUT(408, "Request Timeout"),
+    UNSUPPORTED_MEDIA_TYPE(415, "Unsupported Media Type"),
     TOO_MANY_REQUESTS(429, "Too Many Requests"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
     SERVICE_UNAVAILABLE(503, "Service Unavailable");

@@ -15,7 +15,11 @@ import java.util.Map;
  * In-memory request replay facility guarded by NIOFLOW_REPLAY_ENABLED.
  */
 public class RequestReplayFeature {
-    private static final String[] SENSITIVE_HEADERS = new String[] { "authorization", "cookie", "x-api-key" };
+    private static final String[] SENSITIVE_HEADERS = new String[] {
+            "authorization", "cookie", "x-api-key",
+            "x-auth-token", "x-session-id", "proxy-authorization",
+            "set-cookie", "x-csrf-token"
+    };
 
     private final int capacity;
     private final ReplayEntry[] ring;

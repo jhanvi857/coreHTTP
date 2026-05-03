@@ -4,6 +4,7 @@ import io.github.jhanvi857.taskplanner.model.Task;
 import io.github.jhanvi857.taskplanner.repository.TaskRepository;
 import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 import io.github.jhanvi857.nioflow.routing.HttpContext;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -34,31 +35,31 @@ public class TaskController {
     }
 
     public void get(HttpContext ctx) {
-        String idStr = ctx.pathParam("id");
         try {
-            Long id = Long.parseLong(idStr);
+            long id = ctx.pathParamAsLong("id");
             Optional<Task> task = repository.findById(id).join();
             if (task.isPresent()) {
                 ctx.status(HttpStatus.OK).json(task.get());
             } else {
                 ctx.status(HttpStatus.NOT_FOUND).json(java.util.Map.of("error", "Task not found"));
             }
-        } catch (NumberFormatException e) {
-            ctx.status(HttpStatus.BAD_REQUEST).json(java.util.Map.of("error", "Invalid ID format"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(HttpStatus.BAD_REQUEST).json(java.util.Map.of("error", e.getMessage()));
         } catch (java.util.concurrent.CompletionException e) {
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR).json(java.util.Map.of("error", "Database error"));
         }
     }
 
     public void delete(HttpContext ctx) {
-        String idStr = ctx.pathParam("id");
         try {
-            Long id = Long.parseLong(idStr);
+            long id = ctx.pathParamAsLong("id");
             if (repository.delete(id).join()) {
                 ctx.status(HttpStatus.OK).json(java.util.Map.of("message", "Deleted"));
             } else {
                 ctx.status(HttpStatus.NOT_FOUND).json(java.util.Map.of("error", "Task not found"));
             }
+        } catch (IllegalArgumentException e) {
+            ctx.status(HttpStatus.BAD_REQUEST).json(java.util.Map.of("error", e.getMessage()));
         } catch (Exception e) {
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR).json(java.util.Map.of("error", "Error deleting task"));
         }

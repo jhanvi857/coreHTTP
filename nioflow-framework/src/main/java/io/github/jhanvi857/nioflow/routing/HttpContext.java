@@ -84,6 +84,42 @@ public class HttpContext {
         return pathParams.get(param);
     }
 
+    /**
+     * Safely extracts a numeric path parameter, returning the parsed long value.
+     * Throws IllegalArgumentException if the parameter is missing or non-numeric.
+     * This prevents SQL injection when path params are passed to DB queries.
+     *
+     * @param param the path parameter name
+     * @return the parsed long value
+     * @throws IllegalArgumentException if missing or non-numeric
+     */
+    public long pathParamAsLong(String param) {
+        String raw = pathParams.get(param);
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Missing required path parameter: " + param);
+        }
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Path parameter '" + param + "' must be numeric, got: " + raw);
+        }
+    }
+
+    /**
+     * Safely extracts a numeric path parameter as int.
+     */
+    public int pathParamAsInt(String param) {
+        String raw = pathParams.get(param);
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Missing required path parameter: " + param);
+        }
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Path parameter '" + param + "' must be numeric, got: " + raw);
+        }
+    }
+
     public void addPathParam(String key, String value) {
         pathParams.put(key, value);
     }
@@ -92,11 +128,27 @@ public class HttpContext {
         return java.util.Collections.unmodifiableMap(pathParams);
     }
 
+    /**
+     * Deserializes the request body as JSON into the given type.
+     *
+     * <p>Validates that the Content-Type header starts with {@code application/json}
+     * before attempting deserialization. Returns 415 Unsupported Media Type if the
+     * Content-Type is missing or incorrect.</p>
+     */
     public <T> T body(Class<T> type) {
         String bodyString = request.getBodyAsString();
         if (bodyString == null || bodyString.isEmpty()) {
             return null;
         }
+
+        // ── Content-Type validation ──
+        // Reject non-JSON bodies before invoking Jackson deserialization.
+        String contentType = header("Content-Type");
+        if (contentType == null || !contentType.toLowerCase(java.util.Locale.ROOT).contains("application/json")) {
+            throw new io.github.jhanvi857.nioflow.exception.UnsupportedMediaTypeException(
+                    "Content-Type must be application/json");
+        }
+
         return JsonUtils.fromJson(bodyString, type);
     }
 

@@ -11,6 +11,13 @@ import io.github.jhanvi857.nioflow.exception.HttpParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Hardened HTTP/1.1 request parser with defenses against:
+ * - CRLF injection in header values
+ * - Null byte injection in paths and headers
+ * - Transfer-Encoding obfuscation (request smuggling)
+ * - Oversized headers and bodies
+ */
 public final class HttpParser {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpParser.class);
@@ -27,6 +34,11 @@ public final class HttpParser {
         if (headerBlock == null || headerBlock.isEmpty()) {
             logger.warn("Received empty or null request block");
             throw new HttpParseException("Empty request");
+        }
+
+        // ── Null byte rejection (entire header block) ──
+        if (headerBlock.indexOf('\0') >= 0) {
+            throw new HttpParseException("Null byte detected in request headers");
         }
 
         // Split by the exact \r\n sequence without global trim() to preserve values
@@ -48,6 +60,12 @@ public final class HttpParser {
         String method = parts[0];
         String path = parts[1];
         String version = parts[2];
+
+        // ── Null byte rejection in path ──
+        if (path.indexOf('\0') >= 0) {
+            throw new HttpParseException("Null byte detected in request path");
+        }
+
         if (!path.startsWith("/")) {
             logger.warn("Invalid path in request line: {}", path);
             throw new HttpParseException("Invalid path: " + path);
@@ -71,6 +89,19 @@ public final class HttpParser {
             }
             String key = line.substring(0, colonIndex).trim();
             String value = line.substring(colonIndex + 1).trim();
+
+            // ── CRLF injection rejection ──
+            // Header values must never contain CR or LF characters.
+            // An attacker could inject arbitrary response headers via a reflected value.
+            if (containsCrLf(value) || containsCrLf(key)) {
+                throw new HttpParseException("CRLF characters detected in header — possible injection attack");
+            }
+
+            // ── Null byte rejection in individual header key/value ──
+            if (key.indexOf('\0') >= 0 || value.indexOf('\0') >= 0) {
+                throw new HttpParseException("Null byte detected in header");
+            }
+
             headers.put(key, value);
         }
 
@@ -80,8 +111,13 @@ public final class HttpParser {
         String contentLengthValue = getHeaderValueIgnoreCase(headers, "Content-Length");
 
         if (transferEncoding != null) {
-            if (!"chunked".equalsIgnoreCase(transferEncoding)) {
-                throw new HttpParseException("Unsupported Transfer-Encoding: " + transferEncoding);
+            // ── TE obfuscation defense (request smuggling) ──
+            // Normalize TE value: strip whitespace and check for any value that
+            // is not exactly "chunked". Attackers use "identity, chunked",
+            // " chunked", "chunked\t", etc. to confuse front-end proxies.
+            String normalizedTE = normalizeTransferEncoding(transferEncoding);
+            if (!"chunked".equals(normalizedTE)) {
+                throw new HttpParseException("Unsupported or obfuscated Transfer-Encoding: " + transferEncoding);
             }
             if (contentLengthValue != null) {
                 throw new HttpParseException("Both Transfer-Encoding and Content-Length are not allowed");
@@ -107,6 +143,33 @@ public final class HttpParser {
 
         logger.info("{} {} protocol={}", method, path, version);
         return new HttpRequest(path, method, version, headers, body);
+    }
+
+    /**
+     * Checks if a string contains CR (\r) or LF (\n) characters.
+     */
+    private static boolean containsCrLf(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '\r' || c == '\n') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Normalizes Transfer-Encoding header to detect obfuscation attacks.
+     * Strips whitespace, lowercases, and rejects multi-value TE headers
+     * (e.g. "identity, chunked" which can confuse proxies).
+     */
+    private static String normalizeTransferEncoding(String raw) {
+        String trimmed = raw.trim().toLowerCase(java.util.Locale.ROOT);
+        // Reject if it contains commas (multi-value) — only "chunked" alone is valid
+        if (trimmed.contains(",")) {
+            return trimmed; // will fail the "chunked" equality check
+        }
+        return trimmed;
     }
 
     private String readHeaderBlock(InputStream in) throws IOException {

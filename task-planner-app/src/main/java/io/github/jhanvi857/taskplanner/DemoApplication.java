@@ -70,9 +70,11 @@ public class DemoApplication {
                     "database", "DOWN"));
         });
 
-        app.get("/metrics", ctx -> {
-            ctx.status(HttpStatus.OK).send(io.github.jhanvi857.nioflow.middleware.MetricsMiddleware.getMetricsReport());
-        });
+        // Observability: metrics gated behind NIOFLOW_METRICS_TOKEN if set
+        app.enableMetrics();
+
+        // Request replay (if NIOFLOW_REPLAY_ENABLED=true, gated behind AuthMiddleware)
+        app.enableReplay(100);
 
         app.group("/api/tasks", tasks -> {
             if (!authDisabled) {
