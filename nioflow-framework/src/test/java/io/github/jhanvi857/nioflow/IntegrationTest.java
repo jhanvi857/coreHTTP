@@ -24,11 +24,11 @@ public class IntegrationTest {
     @BeforeAll
     void setup() throws InterruptedException {
         app = new NioFlowApp();
-        
+
         app.use(new LoggerMiddleware());
-        
+
         app.get("/hello", ctx -> ctx.send("world"));
-        
+
         app.group("/api", group -> {
             group.use((ctx, next) -> {
                 ctx.header("X-Test-Order", "first");
@@ -43,14 +43,14 @@ public class IntegrationTest {
                 .threshold(0.5)
                 .windowSize(2)
                 .cooldown(1000);
-        
+
         app.get("/cb", ctx -> {
             throw new RuntimeException("fail");
         }).use(cb);
 
         // Rate Limiter test
         app.get("/rate-limited", ctx -> ctx.send("ok"))
-           .use(new RateLimitMiddleware(1, 5000)); // 1 request per 5 seconds
+                .use(new RateLimitMiddleware(1, 5000)); // 1 request per 5 seconds
 
         new Thread(() -> app.listen(0)).start();
 
@@ -83,8 +83,7 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/hello"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(200, response.statusCode());
         assertEquals("world", response.body());
     }
@@ -96,8 +95,7 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/unknown"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(404, response.statusCode());
     }
 
@@ -108,8 +106,7 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/hello"))
                         .POST(HttpRequest.BodyPublishers.noBody())
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(405, response.statusCode());
     }
 
@@ -120,8 +117,7 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/api/test"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(200, response.statusCode());
         assertTrue(response.headers().firstValue("X-Test-Order").isPresent());
     }
@@ -134,8 +130,7 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/rate-limited"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(200, response1.statusCode());
 
         // Second request 429
@@ -144,8 +139,7 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/rate-limited"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(429, response2.statusCode());
     }
 
@@ -154,12 +148,11 @@ public class IntegrationTest {
         // CLOSED -> OPEN (2 failures)
         for (int i = 0; i < 2; i++) {
             client.send(
-                HttpRequest.newBuilder()
-                        .uri(URI.create("http://127.0.0.1:" + port + "/cb"))
-                        .GET()
-                        .build(),
-                HttpResponse.BodyHandlers.ofString()
-            );
+                    HttpRequest.newBuilder()
+                            .uri(URI.create("http://127.0.0.1:" + port + "/cb"))
+                            .GET()
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString());
         }
 
         // Now it should be OPEN (503)
@@ -168,58 +161,63 @@ public class IntegrationTest {
                         .uri(URI.create("http://127.0.0.1:" + port + "/cb"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(503, responseOpen.statusCode());
         assertTrue(responseOpen.body().contains("Circuit Open"));
 
-        // Wait for cooldown
         Thread.sleep(1200);
 
-        // HALF_OPEN -> CLOSED (will fail again but transition happens on next success)
-        // Wait, the requirement says HALF_OPEN after cooldown -> CLOSED on success.
-        // Let's add a route that can succeed to test HALF_OPEN -> CLOSED.
-        
+        // HALF_OPEN -> CLOSED
+
         app.get("/cb-toggle", ctx -> {
-            if (ctx.header("X-Fail") != null) throw new RuntimeException("fail");
+            if (ctx.header("X-Fail") != null)
+                throw new RuntimeException("fail");
             ctx.send("ok");
         }).use(new CircuitBreakerMiddleware().groupKey("toggle-cb").windowSize(1).cooldown(500));
 
         // Fail once to open
-        client.send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).header("X-Fail", "true").GET().build(), HttpResponse.BodyHandlers.ofString());
-        
+        client.send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle"))
+                .header("X-Fail", "true").GET().build(), HttpResponse.BodyHandlers.ofString());
+
         // Should be open
-        assertEquals(503, client.send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).GET().build(), HttpResponse.BodyHandlers.ofString()).statusCode());
-        
+        assertEquals(503, client
+                .send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).GET().build(),
+                        HttpResponse.BodyHandlers.ofString())
+                .statusCode());
+
         Thread.sleep(600);
-        
+
         // Should be HALF_OPEN, send success
-        HttpResponse<String> respSuccess = client.send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> respSuccess = client.send(
+                HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
         assertEquals(200, respSuccess.statusCode());
-        
+
         // Should be CLOSED now
-        assertEquals(200, client.send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).GET().build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+        assertEquals(200, client
+                .send(HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + "/cb-toggle")).GET().build(),
+                        HttpResponse.BodyHandlers.ofString())
+                .statusCode());
     }
 
     @Test
-    @Order(Integer.MAX_VALUE) // Run last
+    @Order(Integer.MAX_VALUE)
     void testGracefulShutdown() throws Exception {
         app.get("/slow", ctx -> {
             Thread.sleep(500);
             ctx.send("done");
         });
 
-        // Start request in background
+        // Start req. in background
         java.util.concurrent.CompletableFuture<HttpResponse<String>> future = client.sendAsync(
                 HttpRequest.newBuilder()
                         .uri(URI.create("http://127.0.0.1:" + port + "/slow"))
                         .GET()
                         .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
+                HttpResponse.BodyHandlers.ofString());
 
         Thread.sleep(100);
-        
+
         // Stop server while request is in flight
         long start = System.currentTimeMillis();
         app.drainAndStop(2, TimeUnit.SECONDS);

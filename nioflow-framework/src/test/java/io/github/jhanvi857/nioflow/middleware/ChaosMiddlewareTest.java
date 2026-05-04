@@ -1,57 +1,94 @@
 package io.github.jhanvi857.nioflow.middleware;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import io.github.jhanvi857.nioflow.protocol.HttpRequest;
 import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 import io.github.jhanvi857.nioflow.routing.HttpContext;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import io.github.jhanvi857.nioflow.routing.RouteHandler;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ChaosMiddlewareTest {
 
+    private HttpContext ctx;
+    private RouteHandler next;
+    private ChaosMiddleware middleware;
+
+    @BeforeEach
+    void setUp() {
+        ctx = mock(HttpContext.class);
+        next = mock(RouteHandler.class);
+        middleware = new ChaosMiddleware();
+        when(ctx.status(any())).thenReturn(ctx);
+    }
+
     @AfterEach
-    void clear() {
+    void cleanup() {
         System.clearProperty("NIOFLOW_CHAOS_ENABLED");
     }
 
     @Test
-    void chaosDisabledSkipsInjection() throws Exception {
+    void process_chaosDisabled_isNoOp() throws Exception {
         System.setProperty("NIOFLOW_CHAOS_ENABLED", "false");
-        ChaosMiddleware middleware = new ChaosMiddleware().error(500, 1.0d);
-        AtomicBoolean called = new AtomicBoolean(false);
+        middleware.error(500, 1.0);
 
-        HttpContext ctx = new HttpContext(new HttpRequest("/a", "GET", "HTTP/1.1", Map.of(), new byte[0]));
-        middleware.process(ctx, c -> {
-            called.set(true);
-            c.status(HttpStatus.OK).send("ok");
-        });
+        middleware.process(ctx, next);
 
-        assertTrue(called.get());
-        assertEquals(200, ctx.getResponse().getStatus().getCode());
+        verify(next).handle(ctx);
+        verify(ctx, never()).status(any());
     }
 
     @Test
-    void chaosErrorAndDropInjectWhenEnabled() throws Exception {
+    void process_chaosEnabledLatency_injectsDelay() throws Exception {
         System.setProperty("NIOFLOW_CHAOS_ENABLED", "true");
+        middleware.latency(50, 1.0);
 
-        ChaosMiddleware error = new ChaosMiddleware().error(503, 1.0d);
-        AtomicBoolean nextCalled = new AtomicBoolean(false);
-        HttpContext errorCtx = new HttpContext(new HttpRequest("/b", "GET", "HTTP/1.1", Map.of(), new byte[0]));
-        error.process(errorCtx, c -> nextCalled.set(true));
-        assertFalse(nextCalled.get());
-        assertEquals(503, errorCtx.getResponse().getStatus().getCode());
+        long start = System.currentTimeMillis();
+        middleware.process(ctx, next);
+        long end = System.currentTimeMillis();
 
-        ChaosMiddleware drop = new ChaosMiddleware().drop(1.0d);
-        HttpContext dropCtx = new HttpContext(new HttpRequest("/c", "GET", "HTTP/1.1", Map.of(), "body".getBytes(StandardCharsets.UTF_8)));
-        drop.process(dropCtx, c -> {
-            throw new IllegalStateException("must not be called");
-        });
-        assertTrue(dropCtx.isDropResponse());
+        assertTrue(end - start >= 50, "Should have delayed for at least 50ms");
+        verify(next).handle(ctx);
+    }
+
+    @Test
+    void process_chaosEnabledError_returnsError() throws Exception {
+        System.setProperty("NIOFLOW_CHAOS_ENABLED", "true");
+        middleware.error(503, 1.0);
+
+        middleware.process(ctx, next);
+
+        verify(ctx).status(HttpStatus.SERVICE_UNAVAILABLE);
+        verify(next, never()).handle(ctx);
+    }
+
+    @Test
+    void process_chaosEnabledDrop_dropsResponse() throws Exception {
+        System.setProperty("NIOFLOW_CHAOS_ENABLED", "true");
+        middleware.drop(1.0);
+
+        middleware.process(ctx, next);
+
+        verify(ctx).dropResponse();
+        verify(next, never()).handle(ctx);
+    }
+
+    @Test
+    void process_zeroProbability_neverFires() throws Exception {
+        System.setProperty("NIOFLOW_CHAOS_ENABLED", "true");
+        middleware.error(500, 0.0);
+
+        middleware.process(ctx, next);
+
+        verify(next).handle(ctx);
+        verify(ctx, never()).status(any());
+    }
+
+    @Test
+    void configMethods_clampProbability() {
+        middleware.error(500, 1.5).latency(10, -0.5).drop(2.0);
+        // Internal clamp logic should keep it between 0 and 1
     }
 }

@@ -84,9 +84,33 @@ public class HttpParserTest {
 
         HttpRequest request = parser.parse(in);
 
-        // HttpParser.parse already handles headers as a HashMap, let's see if
-        // internal getHeaderValueIgnoreCase works. (Requires manual check in
-        // actual request object if exposed).
         assertEquals("0", request.getHeaders().get("CONTENT-LENGTH"));
+    }
+
+    @Test
+    public void testRejectsCrlfInHeaders() {
+        // CRLF injection attempt within a single header value
+        // The parser should catch the \n character
+        String raw = "GET / HTTP/1.1\r\nX-Injected: value\nevil-header: true\r\n\r\n";
+        InputStream in = new ByteArrayInputStream(raw.getBytes(StandardCharsets.US_ASCII));
+
+        assertThrows(HttpParseException.class, () -> parser.parse(in));
+    }
+
+    @Test
+    public void testRejectsNullByteInPath() {
+        String raw = "GET /evil\0path HTTP/1.1\r\n\r\n";
+        InputStream in = new ByteArrayInputStream(raw.getBytes(StandardCharsets.US_ASCII));
+
+        assertThrows(HttpParseException.class, () -> parser.parse(in));
+    }
+
+    @Test
+    public void testRejectsSmuggledTransferEncoding() {
+        // Multiple TEs or identity+chunked should be rejected
+        String raw = "POST / HTTP/1.1\r\nTransfer-Encoding: identity, chunked\r\n\r\n";
+        InputStream in = new ByteArrayInputStream(raw.getBytes(StandardCharsets.US_ASCII));
+
+        assertThrows(HttpParseException.class, () -> parser.parse(in));
     }
 }
