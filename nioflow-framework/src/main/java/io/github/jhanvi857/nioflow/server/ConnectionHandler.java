@@ -4,9 +4,7 @@ import io.github.jhanvi857.nioflow.protocol.HttpParser;
 import io.github.jhanvi857.nioflow.protocol.HttpRequest;
 import io.github.jhanvi857.nioflow.exception.HttpParseException;
 
-// import java.io.InputStream;
 import java.net.SocketTimeoutException;
-// import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +37,6 @@ public class ConnectionHandler implements Runnable {
             java.io.InputStream in = this.inStream;
             HttpParser parser = new HttpParser();
 
-            // handle multiple requests on the same connection.
             boolean keepAlive = true;
             while (keepAlive && channel.isOpen()) {
                 HttpRequest request;
@@ -52,11 +49,19 @@ public class ConnectionHandler implements Runnable {
                     logger.warn("Malformed request from client: {}", e.getMessage());
                     sendErrorResponse(io.github.jhanvi857.nioflow.protocol.HttpStatus.BAD_REQUEST, "Bad Request");
                     break;
+                } catch (io.github.jhanvi857.nioflow.exception.PayloadTooLargeException e) {
+                    logger.warn("Payload too large: {}", e.getMessage());
+                    sendErrorResponse(io.github.jhanvi857.nioflow.protocol.HttpStatus.fromCode(413),
+                            "Payload Too Large");
+                    break;
+                } catch (io.github.jhanvi857.nioflow.exception.RequestHeaderFieldsTooLargeException e) {
+                    logger.warn("Headers too large: {}", e.getMessage());
+                    sendErrorResponse(io.github.jhanvi857.nioflow.protocol.HttpStatus.fromCode(431),
+                            "Request Header Fields Too Large");
+                    break;
                 } catch (SocketTimeoutException e) {
-                    // Connection idle for too long
                     break;
                 } catch (java.io.IOException e) {
-                    // Client closed connection
                     break;
                 }
 
@@ -72,7 +77,6 @@ public class ConnectionHandler implements Runnable {
                     response.addHeader("Connection", "keep-alive");
                 }
 
-                // Send the response
                 if (!ctx.isDropResponse()) {
                     response.writeTo(this.outStream);
                 } else {
@@ -83,7 +87,6 @@ public class ConnectionHandler implements Runnable {
                     break;
                 }
 
-                // If the stream is empty for now, stop the thread and wait for Selector
                 if (in.available() == 0) {
                     break;
                 }
@@ -93,10 +96,6 @@ public class ConnectionHandler implements Runnable {
                 logger.error("Error processing client request: {}", e.getMessage());
             }
         } finally {
-            // THE NIO HANDOFF:
-            // If want to keep the connection, register it back with the Selector for READ
-            // events.
-            // If not,close it.
             if (key != null && key.isValid() && channel.isOpen()) {
                 key.interestOps(SelectionKey.OP_READ);
                 key.selector().wakeup();
@@ -114,7 +113,10 @@ public class ConnectionHandler implements Runnable {
             io.github.jhanvi857.nioflow.protocol.HttpResponse response = new io.github.jhanvi857.nioflow.protocol.HttpResponse(
                     status, "<h1>" + status.getCode() + " " + message + "</h1>");
             response.writeTo(this.outStream);
-        } catch (java.io.IOException e) {
+            this.outStream.flush();
+
+            Thread.sleep(10);
+        } catch (Exception e) {
             logger.error("Failed to send error: {}", e.getMessage());
         }
     }

@@ -1,7 +1,6 @@
 package io.github.jhanvi857.nioflow.util;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -14,11 +13,11 @@ import org.slf4j.LoggerFactory;
  *
  * <h3>Security measures</h3>
  * <ul>
- *   <li><b>Default typing disabled</b> — blocks the entire CVE-2017-7525
- *       gadget-chain class of deserialization attacks. Polymorphic types
- *       must use explicit {@code @JsonSubTypes} annotations.</li>
- *   <li><b>Unknown properties ignored</b> — prevents unexpected payloads from
- *       causing deserialization failures that leak internal model info.</li>
+ * <li><b>Default typing disabled</b> — blocks the entire CVE-2017-7525
+ * gadget-chain class of deserialization attacks. Polymorphic types
+ * must use explicit {@code @JsonSubTypes} annotations.</li>
+ * <li><b>Unknown properties ignored</b> — prevents unexpected payloads from
+ * causing deserialization failures that leak internal model info.</li>
  * </ul>
  */
 public class JsonUtils {
@@ -27,7 +26,7 @@ public class JsonUtils {
 
     static {
         mapper = JsonMapper.builder()
-                // ── Security: explicitly disable default typing ──
+                // Security: explicitly disable default typing
                 // enableDefaultTyping() would allow arbitrary class instantiation
                 // via @class/@type JSON fields. This is the root cause of
                 // CVE-2017-7525 and dozens of follow-on gadget-chain CVEs.

@@ -41,11 +41,6 @@ public class HttpServer {
         this.socketReadTimeoutMs = readIntSetting("nioflow.socketTimeoutMs", "NIOFLOW_SOCKET_TIMEOUT_MS", 30000,
                 1000);
 
-        // Why this change:
-        // FixedThreadPool uses an unbounded queue by default. Under overload, memory
-        // can grow endlessly.
-        // Bounded queue gives controlled backpressure and lets us reject quickly
-        // with 503.
         this.threadPool = new ThreadPoolExecutor(
                 workerThreads,
                 workerThreads,
@@ -61,7 +56,7 @@ public class HttpServer {
     public void start(io.github.jhanvi857.nioflow.routing.Router router) {
         this.running = true;
 
-        // Removed internal shutdown hook. User should manage application lifecycle via drainAndStop()
+
 
         try {
             // 1. Open the selector to check whether current client is sending more request
@@ -73,33 +68,25 @@ public class HttpServer {
             serverChannel.bind(new InetSocketAddress(port));
             this.boundPort = ((InetSocketAddress) serverChannel.getLocalAddress()).getPort();
 
-            // set non-blocking mode
             serverChannel.configureBlocking(false);
-
-            // 3. Tell the selector we want to know when someone accepts our door
             serverChannel.register(selector, SelectionKey.OP_ACCEPT);
 
             logger.info("NioFlow NIO server listening on port {}", port);
 
-            // nio main loop.
             while (running) {
-                // Wait for an event
                 if (selector.select(1000) == 0) {
                     continue;
                 }
 
-                // Look at all the events that occurred
                 Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
                 while (keys.hasNext()) {
                     SelectionKey key = keys.next();
-                    // Removing so don't process it twice
                     keys.remove();
 
                     if (!key.isValid())
                         continue;
 
                     if (key.isAcceptable()) {
-                        // Accept and hand off directly to a worker thread.
                         acceptNewClient(serverChannel, router);
                     }
                 }
@@ -122,9 +109,6 @@ public class HttpServer {
             return;
         }
 
-        // Worker threads parse request bytes using InputStream semantics.
-        // Keep accepted channels in blocking mode to prevent
-        // IllegalBlockingModeException.
         clientChannel.configureBlocking(true);
         clientChannel.socket().setSoTimeout(socketReadTimeoutMs);
 
@@ -145,8 +129,8 @@ public class HttpServer {
                 inStream = secureSocket.getInputStream();
                 outStream = secureSocket.getOutputStream();
             } else {
-                inStream = java.nio.channels.Channels.newInputStream(clientChannel);
-                outStream = java.nio.channels.Channels.newOutputStream(clientChannel);
+                inStream = clientChannel.socket().getInputStream();
+                outStream = clientChannel.socket().getOutputStream();
             }
 
             threadPool.execute(new ConnectionHandler(clientChannel, inStream, outStream, router, null, threadPool));
@@ -161,10 +145,6 @@ public class HttpServer {
 
     @SuppressWarnings("unused")
     private static String resolveDefaultStaticDir() {
-        // Why need ?
-        // coz The server may be launched from project root, scripts folder, IDE, or CI
-        // runners and a single relative path breaks in some of those cases and causes
-        // 404 on '/'.
         Path cwd = Paths.get("").toAbsolutePath().normalize();
         Path[] candidates = new Path[] {
                 cwd.resolve("src/main/resources/public").normalize(),
@@ -190,9 +170,14 @@ public class HttpServer {
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "<h1>503 Service Unavailable</h1><p>Server is busy. Please retry shortly.</p>");
 
-            // Simple blocking write for rejection
-            response.writeTo(java.nio.channels.Channels.newOutputStream(channel));
-        } catch (IOException ignored) {
+            // Use the socket's output stream directly and ensure it's flushed
+            java.io.OutputStream out = channel.socket().getOutputStream();
+            response.writeTo(out);
+            out.flush();
+            
+            // Give the OS a tiny moment to transmit the buffer before we hard-close
+            Thread.sleep(10); 
+        } catch (Exception ignored) {
         } finally {
             try {
                 channel.close();

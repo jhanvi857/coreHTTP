@@ -19,7 +19,6 @@ public class HttpResponse {
         this.headers = new HashMap<>();
         this.bodyBytes = body != null ? body : new byte[0];
         this.bodyLength = this.bodyBytes.length;
-        // default headers
         this.headers.put("Content-Type", "application/octet-stream");
         this.headers.put("Content-Length", String.valueOf(this.bodyLength));
     }
@@ -39,7 +38,7 @@ public class HttpResponse {
 
     public HttpResponse(HttpStatus status, String body) {
         this(status, body != null ? body.getBytes(StandardCharsets.UTF_8) : null);
-        this.headers.put("Content-Type", "text/plain"); // Override default for String
+        this.headers.put("Content-Type", "text/plain");
     }
 
     public void addHeader(String key, String value) {
@@ -65,14 +64,12 @@ public class HttpResponse {
     public void writeTo(OutputStream out) throws IOException {
         StringBuilder response = new StringBuilder();
 
-        // Status Line
         response.append("HTTP/1.1 ")
                 .append(status.getCode())
                 .append(" ")
                 .append(status.getMessage())
                 .append("\r\n");
 
-        // Headers
         for (Map.Entry<String, String> header : headers.entrySet()) {
             response.append(header.getKey())
                     .append(": ")
@@ -80,13 +77,10 @@ public class HttpResponse {
                     .append("\r\n");
         }
 
-        // Blank line before body
         response.append("\r\n");
 
-        // Write headers
         out.write(response.toString().getBytes(StandardCharsets.UTF_8));
 
-        // Write Body
         if (bodyBytes != null && bodyBytes.length > 0) {
             out.write(bodyBytes);
         } else if (bodyStream != null) {

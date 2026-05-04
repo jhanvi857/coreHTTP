@@ -39,7 +39,6 @@ public class HotReloader {
         }
 
         if (System.getProperty(CHILD_MARKER) != null) {
-            // We are the child process, return to allow the application to run.
             return;
         }
 
@@ -188,7 +187,7 @@ public class HotReloader {
             }
 
             String module = findModule(mainClass);
-            
+
             // 1. Run compile step synchronously first to ensure all modules are ready
             if (!runBuildCommand(module)) {
                 logger.error("Build failed. Aborting restart.");
@@ -306,7 +305,8 @@ public class HotReloader {
             String os = System.getProperty("os.name").toLowerCase();
             if (os.contains("win")) {
                 try {
-                    // On Windows, killing the parent (Maven/Powershell) might leave the child (Java) alive.
+                    // On Windows, killing the parent (Maven/Powershell) might leave the child
+                    // (Java) alive.
                     // taskkill /T /F kills the whole tree.
                     long pid = childProcess.pid();
                     new ProcessBuilder("taskkill", "/F", "/T", "/PID", String.valueOf(pid)).start().waitFor();

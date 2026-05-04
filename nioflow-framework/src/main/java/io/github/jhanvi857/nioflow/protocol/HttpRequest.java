@@ -15,7 +15,6 @@ public class HttpRequest {
         this.path = path;
         this.method = method;
         this.version = version;
-        // Ensure mutable headers
         this.headers = headers != null ? new java.util.HashMap<>(headers) : new java.util.HashMap<>();
         this.body = body != null ? body : new byte[0];
     }

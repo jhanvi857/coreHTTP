@@ -60,7 +60,7 @@ public class Route {
         if (finalRegex.equals("/")) {
             finalRegex = "^/$";
         } else if (!finalRegex.contains(".*")) {
-            finalRegex = "^" + finalRegex + "/?$"; // optional trailing slash
+            finalRegex = "^" + finalRegex + "/?$";
         } else {
             finalRegex = "^" + finalRegex + "$";
         }
@@ -84,7 +84,7 @@ public class Route {
         Matcher m = pattern.matcher(requestPath);
         if (m.matches()) {
             for (int i = 0; i < paramNames.size(); i++) {
-                params.put(paramNames.get(i), m.group(i + 1)); // group 0 is the entire match
+                params.put(paramNames.get(i), m.group(i + 1));
             }
         }
         return params;
@@ -182,7 +182,8 @@ public class Route {
 
     private boolean executeWithHedge(HttpContext ctx, ExecutorService executor) throws Exception {
         HttpContext primary = ctx.fork();
-        CompletableFuture<HttpContext> primaryFuture = CompletableFuture.supplyAsync(() -> runSafely(primary), executor);
+        CompletableFuture<HttpContext> primaryFuture = CompletableFuture.supplyAsync(() -> runSafely(primary),
+                executor);
 
         CompletableFuture<HttpContext> hedgeFuture = new CompletableFuture<>();
         SCHEDULER.schedule(() -> {

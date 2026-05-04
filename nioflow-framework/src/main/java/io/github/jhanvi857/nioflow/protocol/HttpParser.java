@@ -24,31 +24,27 @@ public final class HttpParser {
     private static final int MAX_HEADER_SIZE_BYTES = 8192;
     private static final int MAX_CHUNK_LINE_BYTES = 1024;
     private static final int MAX_CHUNKED_BODY_BYTES = 10 * 1024 * 1024;
-    private static final int MAX_BODY_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB limit for Content-Length bodies
+    private static final int MAX_BODY_SIZE_BYTES = 10 * 1024 * 1024;
 
     public HttpRequest parse(InputStream in) throws IOException, HttpParseException {
         logger.debug("Starting request parsing...");
 
-        // Accurate header reading to ensure we stop exactly at the \r\n\r\n boundary
         String headerBlock = readHeaderBlock(in);
         if (headerBlock == null || headerBlock.isEmpty()) {
             logger.warn("Received empty or null request block");
             throw new HttpParseException("Empty request");
         }
 
-        // ── Null byte rejection (entire header block) ──
         if (headerBlock.indexOf('\0') >= 0) {
             throw new HttpParseException("Null byte detected in request headers");
         }
 
-        // Split by the exact \r\n sequence without global trim() to preserve values
         String[] lines = headerBlock.split("\r\n");
         if (lines.length == 0) {
             logger.warn("Invalid HTTP request: empty header block");
             throw new HttpParseException("Invalid HTTP request");
         }
 
-        // Parsing Request Line
         String reqLine = lines[0];
         logger.debug("Parsing request line: {}", reqLine);
         String[] parts = reqLine.split(" ");
@@ -61,7 +57,6 @@ public final class HttpParser {
         String path = parts[1];
         String version = parts[2];
 
-        // ── Null byte rejection in path ──
         if (path.indexOf('\0') >= 0) {
             throw new HttpParseException("Null byte detected in request path");
         }
@@ -75,12 +70,11 @@ public final class HttpParser {
             throw new HttpParseException("Invalid HTTP version: " + version);
         }
 
-        // Parsing Headers
         Map<String, String> headers = new HashMap<>();
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i];
             if (line.isEmpty())
-                continue; // Safety skip for accidental extra \r\n
+                continue;
 
             int colonIndex = line.indexOf(":");
             if (colonIndex == -1) {
@@ -90,28 +84,36 @@ public final class HttpParser {
             String key = line.substring(0, colonIndex).trim();
             String value = line.substring(colonIndex + 1).trim();
 
-            // ── CRLF injection rejection ──
+            // CRLF injection rejection
             // Header values must never contain CR or LF characters.
             // An attacker could inject arbitrary response headers via a reflected value.
             if (containsCrLf(value) || containsCrLf(key)) {
                 throw new HttpParseException("CRLF characters detected in header — possible injection attack");
             }
 
-            // ── Null byte rejection in individual header key/value ──
+            // Null byte rejection in individual header key/value
             if (key.indexOf('\0') >= 0 || value.indexOf('\0') >= 0) {
                 throw new HttpParseException("Null byte detected in header");
+            }
+
+            if (key.equalsIgnoreCase("Content-Length") && headers.containsKey("Content-Length")) {
+                throw new HttpParseException("Multiple Content-Length headers detected");
             }
 
             headers.put(key, value);
         }
 
-        // Parsing Body
         byte[] body = new byte[0];
         String transferEncoding = getHeaderValueIgnoreCase(headers, "Transfer-Encoding");
         String contentLengthValue = getHeaderValueIgnoreCase(headers, "Content-Length");
 
+        if (transferEncoding != null && contentLengthValue != null) {
+            throw new HttpParseException(
+                    "Both Transfer-Encoding and Content-Length are present — potential smuggling attack");
+        }
+
         if (transferEncoding != null) {
-            // ── TE obfuscation defense (request smuggling) ──
+            // TE obfuscation defense (request smuggling)
             // Normalize TE value: strip whitespace and check for any value that
             // is not exactly "chunked". Attackers use "identity, chunked",
             // " chunked", "chunked\t", etc. to confuse front-end proxies.
@@ -130,7 +132,7 @@ public final class HttpParser {
                     throw new HttpParseException("Negative Content-Length");
                 }
                 if (contentLength > MAX_BODY_SIZE_BYTES) {
-                    throw new HttpParseException(
+                    throw new io.github.jhanvi857.nioflow.exception.PayloadTooLargeException(
                             "Content-Length exceeds maximum allowed size of " + MAX_BODY_SIZE_BYTES);
                 }
                 if (contentLength > 0) {
@@ -167,7 +169,7 @@ public final class HttpParser {
         String trimmed = raw.trim().toLowerCase(java.util.Locale.ROOT);
         // Reject if it contains commas (multi-value) — only "chunked" alone is valid
         if (trimmed.contains(",")) {
-            return trimmed; // will fail the "chunked" equality check
+            return trimmed;
         }
         return trimmed;
     }
@@ -183,7 +185,6 @@ public final class HttpParser {
         while ((b = in.read()) != -1) {
             buffer.write(b);
 
-            // Detecting \r\n\r\n sequence as the end of the header block
             if (b == '\r') {
                 if (state == 0)
                     state = 1;
@@ -195,7 +196,6 @@ public final class HttpParser {
                 if (state == 1)
                     state = 2;
                 else if (state == 3) {
-                    // Correct: headers are ready. Trimming outer padding, not line endings.
                     return buffer.toString(StandardCharsets.US_ASCII.name());
                 } else
                     state = 0;
@@ -203,9 +203,9 @@ public final class HttpParser {
                 state = 0;
             }
 
-            // Safety limit for headers (prevents memory attacks)
             if (buffer.size() > MAX_HEADER_SIZE_BYTES) {
-                throw new IOException("Request headers too large (max: " + MAX_HEADER_SIZE_BYTES + ")");
+                throw new io.github.jhanvi857.nioflow.exception.RequestHeaderFieldsTooLargeException(
+                        "Request headers too large (max: " + MAX_HEADER_SIZE_BYTES + ")");
             }
         }
         return buffer.toString(StandardCharsets.US_ASCII.name());
@@ -252,8 +252,6 @@ public final class HttpParser {
             }
 
             if (chunkSize == 0) {
-                // Trailer section ends with an empty line.
-                // consuming it to leave stream aligned.
                 while (true) {
                     String trailerLine = readLine(in, MAX_CHUNK_LINE_BYTES);
                     if (trailerLine == null || trailerLine.isEmpty()) {

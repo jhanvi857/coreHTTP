@@ -22,7 +22,6 @@ public class HttpContext {
     public HttpContext(HttpRequest request, ExecutorService routeExecutor) {
         this.request = request;
         this.routeExecutor = routeExecutor;
-        // Default response is 200 OK, empty body
         this.response = new HttpResponse(HttpStatus.OK, "");
     }
 
@@ -41,8 +40,6 @@ public class HttpContext {
     public ExecutorService routeExecutor() {
         return routeExecutor;
     }
-
-    // --- Request Helpers ---
 
     public String path() {
         return request.getPath();
@@ -73,8 +70,6 @@ public class HttpContext {
     }
 
     public String query(String param) {
-        // We will implement query extraction properly later.
-        // For now, doing a basic string substring match if needed.
         return null;
     }
 
@@ -131,9 +126,11 @@ public class HttpContext {
     /**
      * Deserializes the request body as JSON into the given type.
      *
-     * <p>Validates that the Content-Type header starts with {@code application/json}
+     * <p>
+     * Validates that the Content-Type header starts with {@code application/json}
      * before attempting deserialization. Returns 415 Unsupported Media Type if the
-     * Content-Type is missing or incorrect.</p>
+     * Content-Type is missing or incorrect.
+     * </p>
      */
     public <T> T body(Class<T> type) {
         String bodyString = request.getBodyAsString();
@@ -141,8 +138,6 @@ public class HttpContext {
             return null;
         }
 
-        // ── Content-Type validation ──
-        // Reject non-JSON bodies before invoking Jackson deserialization.
         String contentType = header("Content-Type");
         if (contentType == null || !contentType.toLowerCase(java.util.Locale.ROOT).contains("application/json")) {
             throw new io.github.jhanvi857.nioflow.exception.UnsupportedMediaTypeException(
@@ -155,8 +150,6 @@ public class HttpContext {
     public String bodyAsString() {
         return request.getBodyAsString();
     }
-
-    // --- Response Helpers ---
 
     public HttpContext status(HttpStatus status) {
         HttpResponse newResponse = new HttpResponse(status, response.getBody());

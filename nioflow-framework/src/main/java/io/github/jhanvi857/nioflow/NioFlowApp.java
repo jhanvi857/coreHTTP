@@ -13,7 +13,6 @@ import io.github.jhanvi857.nioflow.routing.RouteRegistration;
 import io.github.jhanvi857.nioflow.routing.Router;
 import io.github.jhanvi857.nioflow.server.HttpServer;
 import io.github.jhanvi857.nioflow.middleware.MetricsMiddleware;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import io.github.jhanvi857.nioflow.util.HotReloader;
@@ -29,17 +28,16 @@ public class NioFlowApp {
     public NioFlowApp() {
         this.router = new Router();
 
-        // ── NIOFLOW_DISABLE_AUTH enforcement ──
-        // Refuse to start with auth disabled unless the bind address is loopback.
-        // This prevents accidental production deployments with wide-open routes.
         if (Env.getAsBoolean("NIOFLOW_DISABLE_AUTH", false)) {
             String bindHost = Env.get("NIOFLOW_HOST", "127.0.0.1");
             if (!isLoopback(bindHost)) {
                 throw new IllegalStateException(
-                        "NIOFLOW_DISABLE_AUTH=true is not allowed when bound to a non-loopback address (" + bindHost + "). "
-                        + "Set NIOFLOW_HOST=127.0.0.1 or remove NIOFLOW_DISABLE_AUTH for production deployments.");
+                        "NIOFLOW_DISABLE_AUTH=true is not allowed when bound to a non-loopback address (" + bindHost
+                                + "). "
+                                + "Set NIOFLOW_HOST=127.0.0.1 or remove NIOFLOW_DISABLE_AUTH for production deployments.");
             }
-            logger.warn("NIOFLOW_DISABLE_AUTH=true — authentication is disabled. This is only safe for local development.");
+            logger.warn(
+                    "NIOFLOW_DISABLE_AUTH=true — authentication is disabled. This is only safe for local development.");
         }
     }
 
@@ -161,20 +159,21 @@ public class NioFlowApp {
     /**
      * Registers the /metrics endpoint, gated behind a management token.
      *
-     * <p>If {@code NIOFLOW_METRICS_TOKEN} is set, requests must include
+     * <p>
+     * If {@code NIOFLOW_METRICS_TOKEN} is set, requests must include
      * {@code Authorization: Bearer <token>} matching that value. Otherwise
-     * the endpoint is unauthenticated (suitable for internal-only networks).</p>
+     * the endpoint is unauthenticated (suitable for internal-only networks).
+     * </p>
      */
     public NioFlowApp enableMetrics() {
         String metricsToken = Env.get("NIOFLOW_METRICS_TOKEN");
 
         this.get("/metrics", ctx -> {
-            // Gate behind management token if configured
             if (metricsToken != null && !metricsToken.isBlank()) {
                 String authHeader = ctx.header("Authorization");
                 if (authHeader == null || !authHeader.equals("Bearer " + metricsToken)) {
                     ctx.status(HttpStatus.UNAUTHORIZED)
-                       .json(Map.of("error", "Metrics endpoint requires a valid management token"));
+                            .json(Map.of("error", "Metrics endpoint requires a valid management token"));
                     return;
                 }
             }
@@ -188,9 +187,11 @@ public class NioFlowApp {
     /**
      * Enables request replay with auth-gated diagnostic endpoints.
      *
-     * <p>The {@code /_replay} and {@code /_replay/:index} endpoints are protected
+     * <p>
+     * The {@code /_replay} and {@code /_replay/:index} endpoints are protected
      * by {@link AuthMiddleware} — only authenticated users can read buffered
-     * request history.</p>
+     * request history.
+     * </p>
      */
     public NioFlowApp enableReplay(int capacity) {
         if (!Env.getAsBoolean("NIOFLOW_REPLAY_ENABLED", false)) {
@@ -201,9 +202,6 @@ public class NioFlowApp {
         this.replayFeature = new RequestReplayFeature(capacity);
         this.use((ctx, next) -> replayFeature.middleware(next).handle(ctx));
 
-        // ── Auth-gated replay endpoints ──
-        // Wrap replay handlers with AuthMiddleware so that only authenticated
-        // clients can read buffered request history.
         AuthMiddleware auth = new AuthMiddleware();
 
         RouteHandler listHandler = ctx -> ctx.status(HttpStatus.OK).json(replayFeature.dump());
@@ -230,7 +228,6 @@ public class NioFlowApp {
             ctx.status(HttpStatus.OK).json(result);
         };
 
-        // Register with auth middleware scoped to these routes
         router.registerWithMiddleware("GET", "/_replay", listHandler, List.of(auth));
         router.registerWithMiddleware("POST", "/_replay/:index", replayHandler, List.of(auth));
 
@@ -238,7 +235,8 @@ public class NioFlowApp {
     }
 
     private static boolean isLoopback(String host) {
-        if (host == null) return false;
+        if (host == null)
+            return false;
         return "127.0.0.1".equals(host) || "localhost".equals(host) || "::1".equals(host) || "0.0.0.0".equals(host);
     }
 }

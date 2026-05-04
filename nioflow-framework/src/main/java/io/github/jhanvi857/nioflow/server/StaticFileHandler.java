@@ -19,8 +19,6 @@ public class StaticFileHandler implements RouteHandler {
     private final Path baseDir;
 
     public StaticFileHandler(String baseDir) {
-        // Canonical root path ensures that all requests are constrained inside this
-        // directory.
         this.baseDir = Paths.get(baseDir).toAbsolutePath().normalize();
     }
 
@@ -29,8 +27,6 @@ public class StaticFileHandler implements RouteHandler {
         String rawPath = ctx.path();
         String decodedPath;
 
-        // Decodeing %xx sequences first so encoded traversal payloads are visible to
-        // validation logic.
         try {
             decodedPath = URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException ex) {
@@ -38,7 +34,6 @@ public class StaticFileHandler implements RouteHandler {
             return;
         }
 
-        // Ignoring query parameters for static file mapping.
         int queryIdx = decodedPath.indexOf('?');
         if (queryIdx >= 0) {
             decodedPath = decodedPath.substring(0, queryIdx);
@@ -48,7 +43,6 @@ public class StaticFileHandler implements RouteHandler {
             decodedPath = "/index.html";
         }
 
-        // Converting URL path to a relative filesystem path before resolution
         String relativePath = decodedPath.startsWith("/") ? decodedPath.substring(1) : decodedPath;
         Path requestedFile = baseDir.resolve(relativePath).normalize();
 
@@ -61,17 +55,12 @@ public class StaticFileHandler implements RouteHandler {
         if (Files.exists(requestedFile) && !Files.isDirectory(requestedFile)) {
             logger.debug("Serving file: {}", requestedFile);
 
-            // High Performance: Zero-Copy Preparation
-            // Instead of reading the whole file into memory - slow,
-            // prepare a reference to the file on disk.
             long fileSize = Files.size(requestedFile);
             String mimeType = Files.probeContentType(requestedFile);
             if (mimeType == null) {
                 mimeType = detectMimeTypeByExtension(requestedFile);
             }
 
-            // using FileHttpResponse that knows how to stream the file directly from the
-            // disk to the network later.
             HttpResponse response = new FileHttpResponse(HttpStatus.OK, requestedFile, fileSize);
             ctx.setResponse(response);
             ctx.header("Content-Type", mimeType);
