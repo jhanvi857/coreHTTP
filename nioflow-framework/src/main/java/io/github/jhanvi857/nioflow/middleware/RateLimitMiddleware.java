@@ -13,11 +13,11 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <h3>IP Resolution Strategy</h3>
  * <ol>
- *   <li>If trusted proxies are configured, uses the <b>rightmost non-trusted</b>
- *       entry in the {@code X-Forwarded-For} chain — this is the last hop
- *       before the first trusted proxy and is resistant to client-side spoofing.</li>
- *   <li>Falls back to the <b>socket peer address</b> ({@code remoteAddress})
- *       when no proxy header is present or no proxies are trusted.</li>
+ * <li>If trusted proxies are configured, uses the <b>rightmost non-trusted</b>
+ * entry in the {@code X-Forwarded-For} chain — this is the last hop
+ * before the first trusted proxy and is resistant to client-side spoofing.</li>
+ * <li>Falls back to the <b>socket peer address</b> ({@code remoteAddress})
+ * when no proxy header is present or no proxies are trusted.</li>
  * </ol>
  */
 public class RateLimitMiddleware implements Middleware {
@@ -35,7 +35,8 @@ public class RateLimitMiddleware implements Middleware {
 
     /**
      * @param trustedProxies Set of known proxy IPs. When non-empty, the rightmost
-     *                       non-trusted entry in X-Forwarded-For is used as the client IP.
+     *                       non-trusted entry in X-Forwarded-For is used as the
+     *                       client IP.
      */
     public RateLimitMiddleware(int maxRequests, long windowMs, Set<String> trustedProxies) {
         this.maxRequests = maxRequests;
@@ -77,7 +78,7 @@ public class RateLimitMiddleware implements Middleware {
 
         if (xff != null && !xff.isBlank() && !trustedProxies.isEmpty()) {
             // Walk the XFF chain from right to left; the rightmost entry that is
-            // NOT in the trusted set is the true client.
+            // not in the trusted set is the true client.
             String[] ips = xff.split(",");
             for (int i = ips.length - 1; i >= 0; i--) {
                 String candidate = ips[i].trim();
@@ -87,13 +88,10 @@ public class RateLimitMiddleware implements Middleware {
             }
         }
 
-        // No XFF or no trusted proxies configured → use socket peer address.
-        // This is the only address the client cannot spoof at the TCP level.
         String remote = ctx.remoteAddress();
         if (remote == null || remote.isBlank()) {
             return "unknown";
         }
-        // Strip ephemeral port (e.g. "127.0.0.1:54321" → "127.0.0.1")
         return stripPort(remote);
     }
 
@@ -112,13 +110,11 @@ public class RateLimitMiddleware implements Middleware {
         // IPv4 or hostname:port
         int lastColon = address.lastIndexOf(':');
         if (lastColon > 0) {
-            // Verify the part after the colon is numeric (it's a port)
             String afterColon = address.substring(lastColon + 1);
             try {
                 Integer.parseInt(afterColon);
                 return address.substring(0, lastColon);
             } catch (NumberFormatException e) {
-                // Not a port, return as-is
             }
         }
         return address;

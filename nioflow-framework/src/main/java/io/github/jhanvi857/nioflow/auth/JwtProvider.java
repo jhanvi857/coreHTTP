@@ -28,19 +28,12 @@ public class JwtProvider {
      */
     private static final long EXPIRATION_TIME;
     private static final SecretKey SECRET_KEY;
-
-    /** Fixed issuer claim — all tokens must match this value. */
     private static final String ISSUER = "nioflow";
-
-    /** Minimum Shannon entropy bits required for the secret. */
     private static final double MIN_ENTROPY_BITS = 3.0;
-
-    /** Minimum secret length (bytes). */
     private static final int MIN_SECRET_LENGTH = 32;
 
     static {
-        // Resolve expiration time
-        long expirationMs = 900_000L; // 15 min default
+        long expirationMs = 900_000L;
         String expirationOverride = System.getProperty("nioflow.jwt.expirationMs");
         if (expirationOverride == null || expirationOverride.isBlank()) {
             expirationOverride = System.getenv("NIOFLOW_JWT_EXPIRATION_MS");
@@ -52,12 +45,9 @@ public class JwtProvider {
                     expirationMs = parsed;
                 }
             } catch (NumberFormatException ignored) {
-                // keep default
             }
         }
         EXPIRATION_TIME = expirationMs;
-
-        // Resolve and validate secret key
         String keyStr = System.getProperty("nioflow.jwtSecret");
         if (keyStr == null || keyStr.isBlank()) {
             keyStr = System.getenv("JWT_SECRET");
@@ -96,8 +86,8 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .claims(claims)
-                .id(UUID.randomUUID().toString()) // jti — unique token ID for revocation
-                .issuer(ISSUER) // iss — pinned issuer
+                .id(UUID.randomUUID().toString())
+                .issuer(ISSUER)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -113,7 +103,7 @@ public class JwtProvider {
         try {
             Jwts.parser()
                     .verifyWith(SECRET_KEY)
-                    .requireIssuer(ISSUER) // reject tokens from foreign issuers
+                    .requireIssuer(ISSUER)
                     .build()
                     .parseSignedClaims(token);
             return true;

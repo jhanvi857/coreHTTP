@@ -21,19 +21,17 @@ public class CsrfMiddleware implements Middleware {
         String method = ctx.method().toUpperCase();
 
         if (SAFE_METHODS.contains(method)) {
-            // Ensure cookie exists for next state-changing request
             ensureCsrfCookie(ctx);
             next.handle(ctx);
             return;
         }
 
-        // Validate token for POST, PUT, DELETE, etc.
         String headerToken = ctx.header(CSRF_HEADER_NAME);
         String cookieToken = extractCookie(ctx, CSRF_COOKIE_NAME);
 
         if (cookieToken == null || headerToken == null || !cookieToken.equals(headerToken)) {
             ctx.status(HttpStatus.FORBIDDEN)
-               .json(java.util.Map.of("error", "Invalid or missing CSRF token"));
+                    .json(java.util.Map.of("error", "Invalid or missing CSRF token"));
             return;
         }
 
@@ -46,15 +44,15 @@ public class CsrfMiddleware implements Middleware {
             byte[] tokenBytes = new byte[32];
             secureRandom.nextBytes(tokenBytes);
             String newToken = Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
-            // In a real app, we'd use a proper Cookie builder for HttpOnly, Secure, etc.
             ctx.getResponse().addHeader("Set-Cookie", CSRF_COOKIE_NAME + "=" + newToken + "; Path=/; SameSite=Lax");
         }
     }
 
     private String extractCookie(HttpContext ctx, String name) {
         String cookieHeader = ctx.header("Cookie");
-        if (cookieHeader == null) return null;
-        
+        if (cookieHeader == null)
+            return null;
+
         String[] cookies = cookieHeader.split(";");
         for (String cookie : cookies) {
             String[] parts = cookie.trim().split("=");

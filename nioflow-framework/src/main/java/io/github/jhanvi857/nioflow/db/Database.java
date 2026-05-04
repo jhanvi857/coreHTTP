@@ -19,7 +19,7 @@ public class Database {
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
     private static HikariDataSource pgDataSource;
     private static MongoClient mongoClient;
-    
+
     private static CircuitBreaker pgCircuitBreaker;
     private static Retry pgRetry;
 
@@ -43,23 +43,22 @@ public class Database {
             config.setPassword(pass);
             config.setMaximumPoolSize(Env.getAsInt("DB_POOL_MAX", 20));
             config.setMinimumIdle(Env.getAsInt("DB_POOL_MIN", 5));
-            config.setConnectionTimeout(5000); // Fail fast to let circuit breaker take over
+            config.setConnectionTimeout(5000);
             pgDataSource = new HikariDataSource(config);
 
-            // Configure Resilience4j
             CircuitBreakerConfig cbConfig = CircuitBreakerConfig.custom()
-                .failureRateThreshold(50)
-                .waitDurationInOpenState(Duration.ofSeconds(10))
-                .permittedNumberOfCallsInHalfOpenState(5)
-                .slidingWindowSize(20)
-                .build();
+                    .failureRateThreshold(50)
+                    .waitDurationInOpenState(Duration.ofSeconds(10))
+                    .permittedNumberOfCallsInHalfOpenState(5)
+                    .slidingWindowSize(20)
+                    .build();
             pgCircuitBreaker = CircuitBreaker.of("postgres-cb", cbConfig);
 
             RetryConfig retryConfig = RetryConfig.custom()
-                .maxAttempts(3)
-                .waitDuration(Duration.ofMillis(500))
-                .retryExceptions(SQLException.class)
-                .build();
+                    .maxAttempts(3)
+                    .waitDuration(Duration.ofMillis(500))
+                    .retryExceptions(SQLException.class)
+                    .build();
             pgRetry = Retry.of("postgres-retry", retryConfig);
 
             logger.info("Successfully initialized PostgreSQL connection pool with Resiliency (CB + Retry).");
@@ -99,13 +98,12 @@ public class Database {
             throw new SQLException("PostgreSQL Data Source is not initialized.");
         }
 
-        // Decorate the connection acquisition with CB and Retry
         try {
-            return Retry.decorateCheckedSupplier(pgRetry, 
-                CircuitBreaker.decorateCheckedSupplier(pgCircuitBreaker, () -> pgDataSource.getConnection())
-            ).get();
+            return Retry.decorateCheckedSupplier(pgRetry,
+                    CircuitBreaker.decorateCheckedSupplier(pgCircuitBreaker, () -> pgDataSource.getConnection())).get();
         } catch (Throwable t) {
-            if (t instanceof SQLException) throw (SQLException) t;
+            if (t instanceof SQLException)
+                throw (SQLException) t;
             throw new SQLException("Failed to acquire connection due to circuit breaker or retry exhaustion", t);
         }
     }
@@ -131,4 +129,3 @@ public class Database {
         }
     }
 }
-

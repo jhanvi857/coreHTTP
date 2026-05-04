@@ -17,9 +17,11 @@ import java.util.Set;
  * Redis-backed distributed rate limiter implementing a windowed counter.
  * Falls back to in-memory RateLimitMiddleware if Redis is unavailable.
  *
- * <p>IP extraction uses the same hardened strategy as {@link RateLimitMiddleware}:
+ * <p>
+ * IP extraction uses the same hardened strategy as {@link RateLimitMiddleware}:
  * socket peer address by default, rightmost-non-trusted XFF entry when
- * trusted proxies are configured.</p>
+ * trusted proxies are configured.
+ * </p>
  */
 public class RedisRateLimitMiddleware implements Middleware {
     private static final Logger logger = LoggerFactory.getLogger(RedisRateLimitMiddleware.class);
@@ -40,18 +42,18 @@ public class RedisRateLimitMiddleware implements Middleware {
         this.windowSeconds = windowSeconds;
         this.trustedProxies = trustedProxies != null ? trustedProxies : Set.of();
         this.fallback = new RateLimitMiddleware(maxRequests, windowSeconds * 1000L, this.trustedProxies);
-        
+
         String redisUrl = Env.get("NIOFLOW_REDIS_URL");
         if (redisUrl != null && !redisUrl.isBlank()) {
             try {
                 this.jedisPool = new JedisPool(new JedisPoolConfig(), redisUrl);
-                // Test connection
                 try (Jedis jedis = jedisPool.getResource()) {
                     jedis.ping();
                 }
                 logger.info("RedisRateLimitMiddleware connected to Redis at {}", redisUrl);
             } catch (Exception e) {
-                logger.error("Failed to connect to Redis at {}: {}. Will fail-open to in-memory.", redisUrl, e.getMessage());
+                logger.error("Failed to connect to Redis at {}: {}. Will fail-open to in-memory.", redisUrl,
+                        e.getMessage());
                 this.jedisPool = null;
             }
         } else {
@@ -66,10 +68,8 @@ public class RedisRateLimitMiddleware implements Middleware {
             return;
         }
 
-        // Use the same hardened IP resolution as in-memory rate limiter
         String clientIp = resolveClientIp(ctx);
-        
-        // Basic fixed-window counter using the requested key format
+
         long now = System.currentTimeMillis() / 1000;
         long windowStart = now - (now % windowSeconds);
         String key = String.format("ratelimit:%s:%d", clientIp, windowStart);
@@ -95,7 +95,8 @@ public class RedisRateLimitMiddleware implements Middleware {
     }
 
     /**
-     * Resolves the real client IP — mirrors {@link RateLimitMiddleware#resolveClientIp}.
+     * Resolves the real client IP — mirrors
+     * {@link RateLimitMiddleware#resolveClientIp}.
      */
     private String resolveClientIp(HttpContext ctx) {
         String xff = ctx.header("X-Forwarded-For");
@@ -131,7 +132,6 @@ public class RedisRateLimitMiddleware implements Middleware {
                 Integer.parseInt(afterColon);
                 return address.substring(0, lastColon);
             } catch (NumberFormatException e) {
-                // Not a port
             }
         }
         return address;

@@ -7,11 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Global exception handler that converts unhandled exceptions into HTTP responses.
+ * Global exception handler that converts unhandled exceptions into HTTP
+ * responses.
  *
- * <p>When {@code NIOFLOW_EXPOSE_ERROR_DETAILS} is {@code false} (the default),
+ * <p>
+ * When {@code NIOFLOW_EXPOSE_ERROR_DETAILS} is {@code false} (the default),
  * no exception messages or stack traces are exposed in 500 response bodies.
- * Only structured, generic error messages are returned.</p>
+ * Only structured, generic error messages are returned.
+ * </p>
  */
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -38,7 +41,6 @@ public class GlobalExceptionHandler {
                     "{\"error\": \"Forbidden\", \"message\": \"Access denied\"}");
         }
 
-        // ── Never expose stack traces or internal messages in production ──
         return new HttpResponse(HttpStatus.INTERNAL_SERVER_ERROR,
                 "{\"error\": \"Internal Server Error\", \"message\": \"Something went wrong on our end\"}");
     }
@@ -47,11 +49,12 @@ public class GlobalExceptionHandler {
      * Escapes characters that would break JSON string values.
      */
     private static String sanitizeForJson(String input) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         return input.replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }
