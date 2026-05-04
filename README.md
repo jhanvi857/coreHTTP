@@ -8,7 +8,7 @@ A lightweight Java 17 HTTP micro-framework with explicit routing, middleware com
 [![Maven](https://img.shields.io/badge/Maven-3.9+-blue.svg)](https://maven.apache.org/)
 [![Coverage](https://img.shields.io/badge/Coverage-Pending-yellow)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/jhanvi857/nioflow)](https://github.com/jhanvi857/coreHTTP/releases/tag/v1.3.0)
+[![Release](https://img.shields.io/github/v/release/jhanvi857/nioflow)](https://github.com/jhanvi857/coreHTTP/releases/tag/v1.4.0)
 [![NPM Version](https://img.shields.io/npm/v/@jhanvi857/nioflow-cli)](https://www.npmjs.com/package/@jhanvi857/nioflow-cli)
 
 NioFlow is designed around one principle: make HTTP internals understandable without sacrificing production behavior. Instead of hiding complexity behind annotations and reflection-heavy bootstrapping, NioFlow keeps transport, parsing, routing, middleware, and error handling explicit and testable.
@@ -59,7 +59,10 @@ It sits between "build a server from scratch" and "adopt a massive framework":
 NioFlowApp app = new NioFlowApp();
 
 app.get("/", ctx -> ctx.send("Hello"));
-app.get("/api/tasks/:id", taskController::get);
+app.get("/api/tasks/:id", ctx -> {
+    long id = ctx.pathParamAsLong("id"); // Safe numeric parsing
+    // ...
+});
 
 app.group("/api/admin", group -> {
     group.use(new AuthMiddleware());
@@ -178,8 +181,9 @@ curl http://localhost:8080/api/tasks/
 Expected behavior:
 
 - `/_health` returns `200` with JSON payload.
-- `/_ready` returns `200` when dependencies are ready (`503` if DB mode is enabled but DB is unavailable).
-- `/metrics` returns `200` with metrics report.
+- `/_ready` returns `200` when dependencies are ready.
+- `/metrics` returns `200` (requires `NIOFLOW_METRICS_TOKEN` if configured).
+- `/_replay` returns `401` without bearer token (now auth-gated).
 - `/api/tasks/` returns `401` without bearer token.
 
 ---
@@ -220,7 +224,7 @@ public class MyService {
 
 ```java
 app.get("/api/tasks/:id", ctx -> {
-    String id = ctx.pathParam("id");
+    long id = ctx.pathParamAsLong("id"); // Type-safe and injection-resistant
     String auth = ctx.header("Authorization");
 
     ctx.status(200).json(Map.of(
@@ -311,9 +315,9 @@ app.enableReplay(50);
 - Guarded by `NIOFLOW_REPLAY_ENABLED=true`.
 - Captures recent requests in circular memory buffer.
 - `GET /_replay` lists recorded requests.
-- `POST /_replay/:index` replays through current live pipeline and returns original vs current response.
-- Sensitive headers (`Authorization`, `Cookie`, `X-API-Key`) are stripped automatically.
-- **SECURITY WARNING**: The replay buffer endpoints are exposed without authentication by default. In production, you must either disable replay (`NIOFLOW_REPLAY_ENABLED=false`) or secure the `/_replay` routes behind your own authentication middleware to prevent leaking request paths and payloads to unauthorized users.
+- `POST /_replay/:index` replays through current live pipeline.
+- Sensitive headers (Authorization, Cookie, X-API-Key, Proxy-Authorization) are stripped automatically.
+- **SECURITY**: The replay endpoints are now protected by `AuthMiddleware` by default. Only authenticated users with valid JWTs can access request history.
 
 ### 6. Hot Reload (Watch Mode)
 
@@ -399,13 +403,15 @@ This split protects the server from unbounded queue growth and improves backpres
 
 ### Request Hardening
 
-| Control | Current Behavior |
+| Control | v1.4.0 Hardening Behavior |
 |:---|:---|
 | Header size cap | 8 KB maximum |
 | Body size cap | 10 MB maximum |
-| Unsupported framing | Rejects invalid Transfer-Encoding/Content-Length combos |
-| Rate limiting | Per client key with sliding window |
-| Error responses | Sanitized with explicit exception handlers |
+| HTTP Smuggling | Rejects obfuscated Transfer-Encoding (e.g. "identity, chunked") |
+| Injection | Rejects CRLF in headers and Null bytes in paths |
+| Rate limiting | Hardened IP extraction (Socket Peer fallback) |
+| JWT Security | Mandatory issuer validation and high-entropy secret check |
+| Error responses | Sanitized with generic messages in production |
 
 ### CORS Strategy
 
@@ -449,6 +455,8 @@ For production, always set `NIOFLOW_CORS_ORIGIN` to your exact frontend origin.
 | `NIOFLOW_LOG_FORMAT` | No | `plain` | Set to `json` for structured logging |
 | `NIOFLOW_REDIS_URL` | No | None | Redis connection string for distributed rate limiting |
 | `NIOFLOW_TRACING_ENABLED` | No | `false` | Enables OpenTelemetry tracing |
+| `NIOFLOW_METRICS_TOKEN` | No | None | Optional bearer token gate for `/metrics` |
+| `NIOFLOW_JWT_EXPIRATION_MS`| No | `900000` (15m)| JWT access token lifetime |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`| No | `http://localhost:4317` | OTLP gRPC collector endpoint |
 
 ---

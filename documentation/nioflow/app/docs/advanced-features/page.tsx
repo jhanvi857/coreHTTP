@@ -104,7 +104,7 @@ export default function AdvancedFeaturesPage() {
           </div>
           <ul className="mt-4 space-y-2 text-sm text-gray-500 list-disc list-inside">
             <li>OPEN state returns <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">503</code> and <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">Retry-After</code>.</li>
-            <li>Metrics exposed per route-group in the `/metrics` output.</li>
+            <li><strong>v1.4.0 Improvement:</strong> Uses <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">AtomicReference</code> with CAS transitions for absolute thread safety.</li>
           </ul>
         </section>
 
@@ -123,8 +123,8 @@ export default function AdvancedFeaturesPage() {
           </div>
           <ul className="mt-4 space-y-2 text-sm text-gray-500 list-disc list-inside">
             <li>Guarded by <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">NIOFLOW_REPLAY_ENABLED=true</code>.</li>
-            <li>Captures requests in a memory buffer. Post to <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">/_replay/:index</code> to re-evaluate.</li>
-            <li><strong className="text-red-400">Security Warning:</strong> Replay endpoints are unauthenticated. Do not expose them in production without adding an AuthMiddleware guard, as they can leak request payloads.</li>
+            <li><strong>v1.4.0 Security:</strong> Replay endpoints are now protected by <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">AuthMiddleware</code> by default. Access requires a valid JWT.</li>
+            <li>Sensitive headers (Auth, Cookies, API Keys) are stripped before storage.</li>
           </ul>
         </section>
 

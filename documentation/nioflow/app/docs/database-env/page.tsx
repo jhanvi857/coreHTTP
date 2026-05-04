@@ -57,7 +57,11 @@ DB_USER=postgres
 DB_PASS=your_secure_database_password
 
 # MongoDB Configuration (Atlas)
-MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/nioflow`}
+MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/nioflow
+
+# Management and Token Lifecycle (v1.4.0)
+NIOFLOW_METRICS_TOKEN=your-secure-management-token
+NIOFLOW_JWT_EXPIRATION_MS=900000`}
         />
       </section>
 
@@ -102,6 +106,23 @@ MongoDatabase db = mongo.getDatabase("production");`}
         <WarningCallout title="Privacy & Security">
           Ensure that <code className="text-pink-500">.env</code> is added to your <code className="text-pink-500">.gitignore</code> file. NioFlow project generates this by default to prevent leaking credentials.
         </WarningCallout>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-12">Safe Parameter Extraction (v1.4.0)</h3>
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+          To prevent injection vulnerabilities and ensure data integrity, always use the type-safe path parameter extraction methods.
+        </p>
+
+        <CodeBlock 
+          language="java"
+          title="Safe Parameter Parsing"
+          code={`app.get("/api/tasks/:id", ctx -> {
+    // Validates that :id is numeric; throws 400 if not.
+    long taskId = ctx.pathParamAsLong("id");
+    
+    // Also available for Integer
+    int categoryId = ctx.pathParamAsInt("category");
+});`}
+        />
       </section>
 
       {/* SECTION: PROGRAMMATIC ACCESS */}

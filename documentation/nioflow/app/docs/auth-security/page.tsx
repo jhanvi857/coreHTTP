@@ -41,16 +41,27 @@ app.post("/api/auth/login", ctx -> {
 
     tasks.get("/", taskController::list).rateLimit(30, 10_000);
     tasks.post("/", taskController::create);
-    tasks.get("/:id", taskController::get).timeout(1200);
-    tasks.delete("/:id", taskController::delete);
+    tasks.get("/:id", ctx -> {
+        long id = ctx.pathParamAsLong("id"); // Type-safe parameter extraction
+        // ...
+    });
 });`}
       />
+
+      <H2 id="jwt-hardening">JWT Hardening (v1.4.0)</H2>
+      <P>NioFlow v1.4.0 implements several enterprise-grade security controls for JWT issuance and validation:</P>
+      <ul className="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
+        <li><strong>Issuer Pinning:</strong> All tokens are pinned to the <code className="bg-black/30 px-1 rounded">nioflow</code> issuer. Validation fails if the <code className="bg-black/30 px-1 rounded">iss</code> claim is missing or mismatched.</li>
+        <li><strong>Entropy Enforcement:</strong> The framework validates the Shannon entropy of your <code className="bg-black/30 px-1 rounded">JWT_SECRET</code> at startup to prevent weak keys.</li>
+        <li><strong>Short-lived Tokens:</strong> Default expiration is reduced to 15 minutes (configurable via <code className="bg-black/30 px-1 rounded">NIOFLOW_JWT_EXPIRATION_MS</code>).</li>
+        <li><strong>Replay Protection:</strong> Every token includes a unique <code className="bg-black/30 px-1 rounded">jti</code> (JWT ID) claim.</li>
+      </ul>
 
       <H2 id="security-baseline">Security Baseline</H2>
       <div className="my-4 border-l-4 border-red-500 bg-red-900/20 p-4 rounded-r-lg">
         <p className="text-red-400 font-bold mb-1">CRITICAL: Never disable auth in production</p>
         <p className="text-sm text-red-300">
-          The <code className="bg-black/30 px-1 rounded">NIOFLOW_DISABLE_AUTH=true</code> flag is documented for local development convenience. <strong>It bypasses all JWT validation.</strong> You must never set this in a production environment, as it leaves all protected routes fully exposed.
+          The <code className="bg-black/30 px-1 rounded">NIOFLOW_DISABLE_AUTH=true</code> flag is for development only. <strong>As of v1.4.0, the framework will refuse to start with this flag enabled unless bound to a loopback address (127.0.0.1/localhost).</strong>
         </p>
       </div>
       <CodeBlock
@@ -76,6 +87,14 @@ app.onError((err, ctx) -> {
     ctx.status(500).json(java.util.Map.of("error", "Internal Server Error"));
 });`}
       />
+
+      <H2 id="http-parser-hardening">HTTP Parser Hardening</H2>
+      <P>The internal parser includes active defenses against common web vulnerabilities:</P>
+      <ul className="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
+        <li><strong>CRLF Injection:</strong> Header values containing carriage return or line feed characters are rejected with a 400 Bad Request.</li>
+        <li><strong>Null Byte Defense:</strong> Null bytes (<code className="bg-black/30 px-1 rounded">\x00</code>) are prohibited in request paths and headers.</li>
+        <li><strong>Request Smuggling:</strong> Obfuscated Transfer-Encoding headers (e.g., <code className="bg-black/30 px-1 rounded">identity, chunked</code>) are detected and rejected.</li>
+      </ul>
       <Pagination
         prev={{ href: "/docs/routing-frontend", label: "Routing + Frontend" }}
         next={{ href: "/docs/database-env", label: "Database + Env" }}
