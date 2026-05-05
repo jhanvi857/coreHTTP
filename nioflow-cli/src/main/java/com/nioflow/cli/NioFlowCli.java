@@ -241,7 +241,7 @@ public class NioFlowCli {
                 "        <dependency>\n" +
                 "            <groupId>io.github.jhanvi857</groupId>\n" +
                 "            <artifactId>nioflow-framework</artifactId>\n" +
-                "            <version>1.3.0</version>\n" +
+                "            <version>1.4.0</version>\n" +
                 "        </dependency>\n" +
                 "    </dependencies>\n" +
                 "\n" +
