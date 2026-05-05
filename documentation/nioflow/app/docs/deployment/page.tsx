@@ -54,7 +54,7 @@ NIOFLOW_REPLAY_ENABLED=false`}
 
       <H2 id="recommended-production-env">Recommended Production Runtime Values</H2>
       <div className="my-4 border-l-4 border-yellow-500 bg-yellow-900/20 p-4 rounded-r-lg">
-        <p className="text-sm text-yellow-300">
+        <p className="text-sm text-yellow-300 text-justify">
           <strong>Warning:</strong> <code className="bg-black/30 px-1 rounded">NIOFLOW_EXPOSE_ERROR_DETAILS=true</code> will leak full Java exception stack traces directly to HTTP clients. This should remain <code className="bg-black/30 px-1 rounded">false</code> in production to prevent exposing internal application structure.
         </p>
       </div>

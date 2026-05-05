@@ -9,10 +9,10 @@ export default function DocsHomePage() {
         <div className="inline-flex items-center rounded-full border border-muted bg-muted/50 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 mb-5">
           NioFlow Documentation
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-gray-900 dark:text-white">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-gray-900 dark:text-white text-center md:text-left">
           Professional Framework Guide
         </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
           Start from installation and move step-by-step to routing, authentication, frontend integration,
           deployment, and production hardening.
         </p>
@@ -20,12 +20,12 @@ export default function DocsHomePage() {
 
       <section className="mb-10 rounded-2xl border border-muted bg-surface p-6 md:p-8">
         <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">What You Will Build</h2>
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-justify">
           This guide is focused on practical delivery. By the end, you will have a real Java backend using
           NioFlow routes, structured middleware, JWT-protected APIs, health and readiness probes, and a cloud-ready
           runtime setup that can be deployed to Docker, Render, or Railway.
         </p>
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
           Every section includes copy-paste examples and production defaults so you can move from local proof-of-concept
           to release candidate without rewriting the architecture.
         </p>

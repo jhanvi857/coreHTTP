@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 export default function AdvancedFeaturesPage() {
   return (
     <article className="prose prose-invert max-w-none">
-      <h1>Advanced Feature Pack</h1>
-      <p className="lead">
+      <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">Advanced Feature Pack</h1>
+      <p className="lead text-justify">
         NioFlow includes multiple opt-in features designed for small teams operating production services
         without heavy platform infrastructure. These capabilities handle resilience, observability, and
         developer experience natively within the framework.
@@ -24,7 +24,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">ChaosMiddleware</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             Controlled fault injection to simulate real-world networking issues and validate frontend resilience.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -48,7 +48,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">Per-route Observability</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             Granular protection and telemetry for individual endpoints using a fluent API.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -69,7 +69,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">Request Hedging</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             Tail-latency reduction for critical reads by speculatively firing a backup execution.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -89,7 +89,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">Circuit Breaker</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             Prevent cascading failures to downstream services with automatic fast-failing.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -117,7 +117,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">Request Replay</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             Fast debugging by replaying recent recorded requests through the current live pipeline.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -137,7 +137,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">Hot Reload</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             Near-instant developer feedback with automatic recompilation on file changes.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -156,7 +156,7 @@ export default function AdvancedFeaturesPage() {
             </div>
             <h3 className="text-xl font-bold text-white">NioFlow CLI (NPM)</h3>
           </div>
-          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed">
+          <p className="text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">
             A Node.js powered tool to scaffold, run, and manage Java projects with a modern developer experience.
           </p>
           <div className="bg-black border border-muted rounded-lg p-4 font-mono text-sm text-blue-300">
@@ -172,7 +172,7 @@ nioflow dev`}
           </ul>
         </section>
       </div>
-      <Pagination 
+      <Pagination
         prev={{ href: "/docs/database-env", label: "Database + Env" }}
         next={{ href: "/docs/deployment", label: "Operations + Deployment" }}
       />

@@ -11,7 +11,7 @@ export const H3 = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const P = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-gray-600 dark:text-gray-400 mb-4 text-[15px] leading-relaxed">{children}</p>
+  <p className="text-gray-600 dark:text-gray-400 mb-4 text-[15px] leading-relaxed text-justify">{children}</p>
 );
 
 export const CodeBlock = ({ code, language = "bash", title }: { code: string; language?: string; title?: string }) => {
@@ -87,7 +87,7 @@ export const InfoCallout = ({ title, children }: { title: string; children: Reac
     </div>
     <div className="flex-1 space-y-2">
       <h4 className="font-bold text-blue-900 dark:text-blue-400">{title}</h4>
-      <div className="text-[14px] text-blue-800/80 dark:text-blue-300/80 leading-relaxed">{children}</div>
+      <div className="text-[14px] text-blue-800/80 dark:text-blue-300/80 leading-relaxed text-justify">{children}</div>
     </div>
   </div>
 );
@@ -101,7 +101,7 @@ export const WarningCallout = ({ title, children }: { title: string; children: R
     </div>
     <div className="flex-1 space-y-2">
       <h4 className="font-bold text-pink-900 dark:text-pink-400">{title}</h4>
-      <div className="text-[14px] text-pink-800/80 dark:text-pink-300/80 leading-relaxed">{children}</div>
+      <div className="text-[14px] text-pink-800/80 dark:text-pink-300/80 leading-relaxed text-justify">{children}</div>
     </div>
   </div>
 );

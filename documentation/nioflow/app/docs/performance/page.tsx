@@ -17,8 +17,8 @@ export default function PerformancePage() {
       </ul>
 
       <H2 id="results">Results Matrix</H2>
-      <div className="my-8 rounded-2xl border border-muted bg-surface/50 overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
+      <div className="my-8 rounded-2xl border border-muted bg-surface/50 overflow-x-auto shadow-sm">
+        <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="bg-muted/30 border-b border-muted">
               <th className="py-4 px-6 font-semibold text-sm uppercase tracking-wider text-gray-500">Metric</th>
@@ -71,8 +71,8 @@ export default function PerformancePage() {
       <H2 id="coverage">Code Coverage (JaCoCo)</H2>
       <P>We maintain a rigorous testing standard using JaCoCo to ensure all critical paths in the framework are validated. Our test suite runs <strong>271 tests</strong> as part of the CI pipeline.</P>
 
-      <div className="my-8 rounded-2xl border border-muted bg-surface/50 overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
+      <div className="my-8 rounded-2xl border border-muted bg-surface/50 overflow-x-auto shadow-sm">
+        <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="bg-muted/30 border-b border-muted">
               <th className="py-4 px-6 font-semibold text-sm text-gray-500">Package / Scope</th>

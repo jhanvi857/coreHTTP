@@ -49,7 +49,7 @@ export default function DependencyTabs() {
         <div className="absolute top-0 right-0 h-px w-full bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
 
         <div className="flex items-center justify-between px-2 py-0 border-b border-[#222] bg-[#0a0a0a]">
-          <div className="flex overflow-x-auto no-scrollbar">
+          <div className="flex flex-1 min-w-0 overflow-x-auto no-scrollbar">
             {(Object.keys(DEPENDENCIES) as Array<keyof typeof DEPENDENCIES>).map((tab) => (
               <button
                 key={tab}
@@ -68,7 +68,7 @@ export default function DependencyTabs() {
           </div>
           <button
             onClick={copyToClipboard}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#222] hover:bg-[#333] text-gray-300 text-xs transition-colors border border-[#333] mr-2"
+            className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#222] hover:bg-[#333] text-gray-300 text-xs transition-colors border border-[#333] mr-2 ml-2"
           >
             {copied ? (
               <>

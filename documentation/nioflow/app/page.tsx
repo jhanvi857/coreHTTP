@@ -38,7 +38,7 @@ export default function Home() {
                 NioFlow: A Configurable Java <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-600">Micro-Framework.</span>
               </h1>
 
-              <p className="text-lg text-gray-400 mb-10 leading-relaxed max-w-xl">
+              <p className="text-lg text-gray-400 mb-10 leading-relaxed max-w-xl text-justify">
                 NioFlow is a minimalistic Java HTTP framework focusing on explicit programmatic configuration. It utilizes a hybrid architecture: NIO Selector for connection acceptance and a bounded thread pool for blocking request processing.
               </p>
 
@@ -208,7 +208,7 @@ export default function Home() {
                   NIO
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Hybrid NIO Architecture</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
+                <p className="text-gray-400 leading-relaxed text-[15px] text-justify">
                   Built on Java's <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-[13px]">java.nio</code>. Connection tracking and event loops use efficient Selectors, while request processing is handled by a bounded worker pool.
                 </p>
               </div>
@@ -219,7 +219,7 @@ export default function Home() {
                   TLS
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Native HTTPS Security</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
+                <p className="text-gray-400 leading-relaxed text-[15px] text-justify">
                   Direct <code>SSLContext</code> integration allows raw <code>SocketChannel</code> handoffs to <code>SSLSocketFactory</code>, dropping the requirement for Nginx proxies entirely for HTTPS.
                 </p>
               </div>
@@ -230,7 +230,7 @@ export default function Home() {
                   DMA
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Zero-Copy Memory</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
+                <p className="text-gray-400 leading-relaxed text-[15px] text-justify">
                   Hardware-accelerated Direct Memory Access via <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-[13px]">FileChannel.transferTo()</code>. Static files hit the socket without crossing into JVM user-space memory.
                 </p>
               </div>
@@ -241,7 +241,7 @@ export default function Home() {
                   DB
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Async Database Offload</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
+                <p className="text-gray-400 leading-relaxed text-[15px] text-justify">
                   Prevent worker thread blocking using <code>CompletableFuture</code>. Operations hit HikariCP and PostgreSQL on a dedicated secondary loop, ensuring maximum throughput.
                 </p>
               </div>
@@ -254,7 +254,7 @@ export default function Home() {
                   HED
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Request Hedging</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
+                <p className="text-gray-400 leading-relaxed text-[15px] text-justify">
                   Native tail-latency reduction. Automatically fire backup requests when primary executions cross latency thresholds to keep p99s consistently low.
                 </p>
               </div>
@@ -265,7 +265,7 @@ export default function Home() {
                   OTEL
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Observability Pack</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
+                <p className="text-gray-400 leading-relaxed text-[15px] text-justify">
                   Native OpenTelemetry tracing, Prometheus metrics, and structured JSON logging. Get full visibility into your distributed system with zero external agents.
                 </p>
               </div>
@@ -292,7 +292,7 @@ export default function Home() {
 
         {/* THE CTA SECTION */}
         <section className="w-full bg-[#0a0a0a] text-white py-24 md:py-32">
-          <div className="max-w-[1200px] mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+          <div className="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
 
             {/* Left Content Column */}
             <div className="flex flex-col">
@@ -300,11 +300,11 @@ export default function Home() {
                 <span className="text-gray-300">Available on GitHub</span>
               </div>
 
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-tight text-balance">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-tight">
                 Built for engineers who want to understand the stack, not hide from it.
               </h2>
 
-              <p className="text-lg text-gray-400 mb-10 leading-relaxed text-balance">
+              <p className="text-lg text-gray-400 mb-10 leading-relaxed text-justify">
                 The framework avoids reflection and hidden dependency injection containers. Authored by <strong>Jhanvi Patel</strong>, NioFlow ensures all dependencies and middleware flows are explicit and predictable.
               </p>
 

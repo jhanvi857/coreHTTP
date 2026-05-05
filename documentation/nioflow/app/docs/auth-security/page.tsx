@@ -61,7 +61,7 @@ app.post("/api/auth/login", ctx -> {
       <H2 id="security-baseline">Security Baseline</H2>
       <div className="my-4 border-l-4 border-red-500 bg-red-900/20 p-4 rounded-r-lg">
         <p className="text-red-400 font-bold mb-1">CRITICAL: Never disable auth in production</p>
-        <p className="text-sm text-red-300">
+        <p className="text-sm text-red-300 text-justify">
           The <code className="bg-black/30 px-1 rounded">NIOFLOW_DISABLE_AUTH=true</code> flag is for development only. <strong>As of v1.4.0, the framework will refuse to start with this flag enabled unless bound to a loopback address (127.0.0.1/localhost).</strong>
         </p>
       </div>

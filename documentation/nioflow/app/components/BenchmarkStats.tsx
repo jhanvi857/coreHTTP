@@ -16,14 +16,14 @@ const BenchmarkStats = () => {
         <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#333]"></div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-4">
         {stats.map((stat, index) => (
           <div 
             key={index} 
-            className={`p-5 rounded-2xl border border-[#222] bg-gradient-to-br from-[#0f0f0f] to-[#050505] flex flex-col gap-2 hover:border-[#444] transition-all duration-300 group ${stat.glow}`}
+            className={`p-4 md:p-5 rounded-2xl border border-[#222] bg-gradient-to-br from-[#0f0f0f] to-[#050505] flex flex-col gap-2 hover:border-[#444] transition-all duration-300 group ${stat.glow}`}
           >
-            <span className="text-[12px] text-gray-500 font-medium group-hover:text-gray-400 transition-colors">{stat.label}</span>
-            <div className="flex items-baseline gap-1.5">
+            <span className="text-[12px] text-gray-500 font-medium group-hover:text-gray-400 transition-colors whitespace-nowrap">{stat.label}</span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
               <span className={`text-2xl md:text-3xl font-bold tracking-tight ${stat.color} drop-shadow-sm`}>
                 {stat.value}
               </span>
@@ -33,8 +33,8 @@ const BenchmarkStats = () => {
         ))}
       </div>
       
-      <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-gray-500 font-mono">
-        <span className="flex h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[11px] text-gray-500 font-mono text-center">
+        <span className="flex h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
         <span>Hardware-validated via k6 v1.7.1 (100 VUs)</span>
       </div>
     </div>

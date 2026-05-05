@@ -8,7 +8,7 @@ export default function DatabaseEnvPage() {
         <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
           Database + Environment
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
+        <p className="text-xl text-gray-600 dark:text-gray-400 text-justify">
           Orchestrate your secrets, configuration, and database connections securely using NioFlow's integrated environment management.
         </p>
       </div>
@@ -22,7 +22,7 @@ export default function DatabaseEnvPage() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Environment Configuration</h2>
         </div>
         
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
           NioFlow utilizes a built-in environment loader that automatically detects and parses <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm text-blue-600 dark:text-blue-400">.env</code> files in your project root. This prevents hardcoding secrets like Supabase keys or database passwords in your source code or command-line history.
         </p>
 
@@ -31,7 +31,7 @@ export default function DatabaseEnvPage() {
             <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             Library Credit & Compliance
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+          <p className="text-sm text-gray-600 dark:text-gray-400 italic text-justify">
             NioFlow's environment management is powered by the excellent <strong className="text-blue-500">dotenv-java</strong> library authored by <strong>io.github.cdimascio</strong>. We use the official, unmodified library as a dependency to ensure full security and performance standards.
           </p>
         </div>
@@ -74,7 +74,7 @@ NIOFLOW_JWT_EXPIRATION_MS=900000`}
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Built-in Persistence</h2>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
           NioFlow provides first-class support for both relational and document-based storage. You can initialize these directly on your application instance.
         </p>
 
@@ -108,7 +108,7 @@ MongoDatabase db = mongo.getDatabase("production");`}
         </WarningCallout>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-12">Safe Parameter Extraction (v1.4.0)</h3>
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
           To prevent injection vulnerabilities and ensure data integrity, always use the type-safe path parameter extraction methods.
         </p>
 
@@ -128,7 +128,7 @@ MongoDatabase db = mongo.getDatabase("production");`}
       {/* SECTION: PROGRAMMATIC ACCESS */}
       <section id="env-api" className="space-y-6 pt-12 border-t border-gray-200 dark:border-gray-800">
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white">The Env API</h3>
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
           The framework provides a unified <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm text-blue-600 dark:text-blue-400">io.github.jhanvi857.nioflow.Env</code> class to access configuration values with ease.
         </p>
 
