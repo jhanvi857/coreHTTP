@@ -8,7 +8,7 @@ export default function PerformancePage() {
 
       <H2 id="test-overview">Test Overview</H2>
       <P>The test was conducted using **k6** against the `task-planner-app` reference implementation. We used a graduated load profile to observe the framework's behavior from zero to peak capacity.</P>
-      
+
       <ul className="list-disc pl-6 space-y-2 my-4 text-gray-700 dark:text-gray-300">
         <li><strong>Tooling:</strong> k6 v1.7.1</li>
         <li><strong>Profile:</strong> 0 to 100 Virtual Users (VUs) over 2 minutes</li>
@@ -68,6 +68,43 @@ export default function PerformancePage() {
         </table>
       </div>
 
+      <H2 id="coverage">Code Coverage (JaCoCo)</H2>
+      <P>We maintain a rigorous testing standard using JaCoCo to ensure all critical paths in the framework are validated. Our test suite runs <strong>271 tests</strong> as part of the CI pipeline.</P>
+
+      <div className="my-8 rounded-2xl border border-muted bg-surface/50 overflow-hidden shadow-sm">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-muted/30 border-b border-muted">
+              <th className="py-4 px-6 font-semibold text-sm text-gray-500">Package / Scope</th>
+              <th className="py-4 px-6 font-semibold text-sm text-gray-500">Instruction Coverage</th>
+              <th className="py-4 px-6 font-semibold text-sm text-gray-500">Branch Coverage</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-muted/50">
+            <tr className="hover:bg-muted/10">
+              <td className="py-4 px-6 font-medium text-gray-900 dark:text-white">Global Baseline</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400 font-bold">83.44%</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400 font-bold">71.69%</td>
+            </tr>
+            <tr className="hover:bg-muted/10">
+              <td className="py-4 px-6 text-gray-700 dark:text-gray-300">io.github.jhanvi857.nioflow.middleware</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400">94%</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400">83%</td>
+            </tr>
+            <tr className="hover:bg-muted/10">
+              <td className="py-4 px-6 text-gray-700 dark:text-gray-300">io.github.jhanvi857.nioflow.protocol</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400">94%</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400">85%</td>
+            </tr>
+            <tr className="hover:bg-muted/10">
+              <td className="py-4 px-6 text-gray-700 dark:text-gray-300">io.github.jhanvi857.nioflow.routing</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400">93%</td>
+              <td className="py-4 px-6 text-green-600 dark:text-green-400">87%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
 
       <H2 id="analysis">Technical Analysis</H2>
       <H3>Efficiency and Overhead</H3>
@@ -102,7 +139,7 @@ export default function () {
         language="bash"
         code={`k6 run load_test.js`}
       />
-      <Pagination 
+      <Pagination
         prev={{ href: "/docs/reference", label: "API Reference" }}
         next={{ href: "/docs", label: "Professional Framework Guide" }}
       />

@@ -16,8 +16,18 @@ import java.time.format.DateTimeFormatter;
 public class LoggerMiddleware implements Middleware {
     private static final Logger logger = LoggerFactory.getLogger(LoggerMiddleware.class);
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final boolean JSON_LOGGING = "json".equalsIgnoreCase(Env.get("NIOFLOW_LOG_FORMAT"));
+    private static final boolean DEFAULT_JSON_LOGGING = "json".equalsIgnoreCase(Env.get("NIOFLOW_LOG_FORMAT"));
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"));
+
+    private final boolean jsonLogging;
+
+    public LoggerMiddleware() {
+        this(DEFAULT_JSON_LOGGING);
+    }
+
+    public LoggerMiddleware(boolean jsonLogging) {
+        this.jsonLogging = jsonLogging;
+    }
 
     @Override
     public void process(HttpContext ctx, RouteHandler next) throws Exception {
@@ -39,7 +49,7 @@ public class LoggerMiddleware implements Middleware {
             MDC.put("status", String.valueOf(statusCode));
             MDC.put("duration", String.valueOf(duration));
 
-            if (JSON_LOGGING) {
+            if (jsonLogging) {
                 logJson("INFO", ctx, statusCode, duration, clientIp, requestId, null);
             } else {
                 logger.info("Request processed successfully: {} {} -> {}",
@@ -53,7 +63,7 @@ public class LoggerMiddleware implements Middleware {
             MDC.put("duration", String.valueOf(duration));
             MDC.put("error", e.getMessage());
 
-            if (JSON_LOGGING) {
+            if (jsonLogging) {
                 logJson("ERROR", ctx, 500, duration, clientIp, requestId, e.getMessage());
             } else {
                 logger.error("Request failed: {} {} - {}",

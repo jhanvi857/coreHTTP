@@ -17,9 +17,15 @@ import org.slf4j.LoggerFactory;
 public class StaticFileHandler implements RouteHandler {
     private static final Logger logger = LoggerFactory.getLogger(StaticFileHandler.class);
     private final Path baseDir;
+    private final String mountPath;
 
     public StaticFileHandler(String baseDir) {
+        this(baseDir, "/");
+    }
+
+    public StaticFileHandler(String baseDir, String mountPath) {
         this.baseDir = Paths.get(baseDir).toAbsolutePath().normalize();
+        this.mountPath = mountPath.endsWith("/") ? mountPath : mountPath + "/";
     }
 
     @Override
@@ -32,6 +38,10 @@ public class StaticFileHandler implements RouteHandler {
         } catch (IllegalArgumentException ex) {
             ctx.status(HttpStatus.BAD_REQUEST).send("Malformed URL path");
             return;
+        }
+
+        if (decodedPath.startsWith(mountPath)) {
+            decodedPath = "/" + decodedPath.substring(mountPath.length());
         }
 
         int queryIdx = decodedPath.indexOf('?');

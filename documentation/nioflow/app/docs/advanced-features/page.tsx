@@ -103,7 +103,9 @@ export default function AdvancedFeaturesPage() {
 });`}
           </div>
           <ul className="mt-4 space-y-2 text-sm text-gray-500 list-disc list-inside">
-            <li>OPEN state returns <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">503</code> and <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">Retry-After</code>.</li>
+            <li><strong>CLOSED</strong>: requests flow normally.</li>
+            <li><strong>OPEN</strong>: requests are immediately rejected with <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">503</code> and <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">Retry-After</code>.</li>
+            <li><strong>HALF_OPEN</strong>: one trial request is allowed through to test recovery.</li>
             <li><strong>v1.4.0 Improvement:</strong> Uses <code className="text-gray-400 bg-[#222] px-1 py-0.5 rounded">AtomicReference</code> with CAS transitions for absolute thread safety.</li>
           </ul>
         </section>

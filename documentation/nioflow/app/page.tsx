@@ -34,13 +34,20 @@ export default function Home() {
               </div>
 
 
-              <h1 className="text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
+              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight mb-6">
                 NioFlow: A Configurable Java <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-600">Micro-Framework.</span>
               </h1>
 
               <p className="text-lg text-gray-400 mb-10 leading-relaxed max-w-xl">
                 NioFlow is a minimalistic Java HTTP framework focusing on explicit programmatic configuration. It utilizes a hybrid architecture: NIO Selector for connection acceptance and a bounded thread pool for blocking request processing.
               </p>
+
+              {/* <div className="bg-[#111] border border-[#333] rounded-lg p-4 mb-10 max-w-xl">
+                <h3 className="text-sm font-bold text-white mb-1">Why not Spring Boot?</h3>
+                <p className="text-sm text-gray-400">
+                  NioFlow is not a Spring Boot replacement. It is built for developers who want to understand what a framework does before using one that hides it.
+                </p>
+              </div> */}
 
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                 <Link href="/docs" className="inline-flex justify-center items-center h-12 px-8 text-[15px] font-medium bg-white text-black hover:bg-gray-200 transition-colors rounded-lg shadow-md">
@@ -71,7 +78,7 @@ export default function Home() {
                   <p className="text-gray-500 mt-2">[INFO] nioflow: Linked global binary successfully.</p>
                   <p><span className="text-green-400">$</span> nioflow dev</p>
                   <p className="text-gray-500 mt-2">[INFO] Watcher: Monitoring src/main/java...</p>
-                  <p className="text-gray-500">[INFO] Bootstrap: Starting NioFlow v1.3.0</p>
+                  <p className="text-gray-500">[INFO] Bootstrap: Starting NioFlow v1.4.0</p>
                   <p className="text-gray-500">[INFO] NIO: ServerSocketChannel on 0.0.0.0:8080</p>
                   <p className="text-blue-400 mb-4">[READY] Application live with Hot Reload enabled.</p>
                   <p className="mt-4"><span className="text-green-400">$</span> curl http://localhost:8080/metrics</p>
@@ -109,7 +116,7 @@ export default function Home() {
                 <div className="bg-black border border-[#333] rounded-xl p-6 font-mono text-[14px]">
                   <div className="flex justify-between items-center mb-4 border-b border-[#222] pb-2">
                     <span className="text-gray-500 text-xs uppercase tracking-widest">Global Setup</span>
-                    <span className="text-blue-400 text-xs">v1.3.0</span>
+                    <span className="text-blue-400 text-xs">v1.4.0</span>
                   </div>
                   <p className="text-blue-300"># Install the CLI</p>
                   <p className="text-white mb-4">npm install -g @jhanvi857/nioflow-cli</p>
@@ -170,6 +177,13 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            <div className="mt-12 text-center">
+              <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 text-sm border border-blue-500/20">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                Audited for CVEs post-release. CRLF injection, XFF spoofing, JWT gaps, and HTTP request smuggling patched in v1.4.0.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -186,16 +200,7 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              {/* Feature 1 */}
-              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
-                  CLI
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-white">Zero-Config CLI</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
-                  Scaffold, run, and hot-reload projects using our NPM-distributed CLI. Bridge the gap between Java performance and modern DX with <code className="text-gray-300 bg-[#222] px-1.5 py-0.5 rounded text-[13px]">nioflow dev</code>.
-                </p>
-              </div>
+
 
               {/* Feature 2 */}
               <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
@@ -241,49 +246,7 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Feature 5 */}
-              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
-                  ERR
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-white">Global Error Handling</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
-                  Uncaught runtime exceptions are cleanly intercepted. Configure custom JSON fallback responses to guarantee you never leak a raw stack trace to the public internet.
-                </p>
-              </div>
 
-              {/* Feature 6 */}
-              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
-                  SIG
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-white">Graceful Shutdown</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
-                  Built for containerized environments. Using <code>drainAndStop()</code>, NioFlow safely completes all active TCP requests before permitting SIGTERM termination.
-                </p>
-              </div>
-
-              {/* Feature 7 */}
-              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
-                  OTEL
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-white">Observability Pack</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
-                  Native OpenTelemetry tracing, Prometheus metrics, and structured JSON logging. Get full visibility into your distributed system with zero external agents.
-                </p>
-              </div>
-
-              {/* Feature 8 */}
-              {/* <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
-                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
-                  JWT
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-white">Stateless Security</h3>
-                <p className="text-gray-400 leading-relaxed text-[15px]">
-                  Integrated password hashing and JWT issuance. Secure your route groups with zero-configuration middleware and enterprise-grade signing defaults.
-                </p>
-              </div> */}
 
               {/* Feature 9 */}
               <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
@@ -293,6 +256,17 @@ export default function Home() {
                 <h3 className="text-xl font-bold mb-3 text-white">Request Hedging</h3>
                 <p className="text-gray-400 leading-relaxed text-[15px]">
                   Native tail-latency reduction. Automatically fire backup requests when primary executions cross latency thresholds to keep p99s consistently low.
+                </p>
+              </div>
+
+              {/* Feature 6 */}
+              <div className="p-8 rounded-2xl border border-[#222] bg-[#111] hover:bg-[#151515] transition-colors group">
+                <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center font-mono text-xs text-gray-400 mb-6 transition-transform group-hover:scale-110">
+                  OTEL
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">Observability Pack</h3>
+                <p className="text-gray-400 leading-relaxed text-[15px]">
+                  Native OpenTelemetry tracing, Prometheus metrics, and structured JSON logging. Get full visibility into your distributed system with zero external agents.
                 </p>
               </div>
             </div>
@@ -327,7 +301,7 @@ export default function Home() {
               </div>
 
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-tight text-balance">
-                The Final Piece of the <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-600">Architecture Puzzle.</span>
+                Built for engineers who want to understand the stack, not hide from it.
               </h2>
 
               <p className="text-lg text-gray-400 mb-10 leading-relaxed text-balance">

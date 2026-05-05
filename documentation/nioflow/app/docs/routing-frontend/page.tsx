@@ -11,7 +11,9 @@ export default function RoutingFrontendPage() {
         title="routes"
         language="java"
         code={`app.get("/api/users/:id", ctx -> {
-    String id = ctx.pathParam("id");
+    // SECURITY: Use pathParamAsLong or pathParamAsInt when passing to a database.
+    // Raw pathParam("id") could contain SQL injection vectors or non-numeric garbage.
+    long id = ctx.pathParamAsLong("id");
     ctx.json(java.util.Map.of("id", id, "name", "Demo User"));
 });
 
@@ -22,6 +24,23 @@ app.post("/api/users", ctx -> {
         return;
     }
     ctx.status(201).json(java.util.Map.of("message", "created"));
+});`}
+      />
+
+      <H2 id="query-parameters">Query Parameters</H2>
+      <P>Extract query parameters natively. If a parameter is missing, it returns null.</P>
+      <CodeBlock
+        title="query-params"
+        language="java"
+        code={`// Example: /api/search?page=1&limit=10
+app.get("/api/search", ctx -> {
+    String page = ctx.queryParam("page");
+    String limit = ctx.queryParam("limit");
+    
+    int pageNum = page != null ? Integer.parseInt(page) : 1;
+    int limitNum = limit != null ? Integer.parseInt(limit) : 20;
+
+    ctx.json(java.util.Map.of("page", pageNum, "limit", limitNum));
 });`}
       />
 
@@ -46,6 +65,20 @@ app.post("/api/users", ctx -> {
         "name", req.getName()
     ));
 });`}
+      />
+
+      <H2 id="routing-errors">404 Not Found vs 405 Method Not Allowed</H2>
+      <P>NioFlow strictly distinguishes between a path that does not exist (404) and a path that exists but was called with the wrong HTTP method (405). This adheres to REST best practices and prevents confusing client errors.</P>
+      <CodeBlock
+        title="curl-tests"
+        language="bash"
+        code={`# 404 Not Found (path doesn't exist)
+$ curl -i -X GET http://localhost:8080/does-not-exist
+HTTP/1.1 404 Not Found
+
+# 405 Method Not Allowed (path exists, wrong method)
+$ curl -i -X POST http://localhost:8080/api/users/1
+HTTP/1.1 405 Method Not Allowed`}
       />
 
       <H2 id="frontend-integration">Frontend fetch() Example</H2>

@@ -7,6 +7,7 @@ export default function AuthSecurityPage() {
       <P>Implement signup/login, JWT issuance, and route protection in a production-friendly way.</P>
 
       <H2 id="auth-login-signup">Signup + Login Flow</H2>
+      <P><strong>What is a JWT?</strong> A JSON Web Token (JWT) is a securely signed string that the server generates upon successful login. The client stores this token and sends it back in the <code className="bg-black/30 px-1 rounded">Authorization: Bearer &lt;token&gt;</code> header with every subsequent request to prove their identity statelessly.</P>
       <CodeBlock
         title="auth-routes"
         language="java"

@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /** Whether to include exception messages in response bodies. Default: false. */
-    private static final boolean EXPOSE_ERROR_DETAILS = Env.getAsBoolean("NIOFLOW_EXPOSE_ERROR_DETAILS", false);
+    private static boolean EXPOSE_ERROR_DETAILS = Env.getAsBoolean("NIOFLOW_EXPOSE_ERROR_DETAILS", false);
 
     public static HttpResponse handle(Exception e) {
         logger.error("Unhandled exception processing request: {}", e.getMessage(), e);

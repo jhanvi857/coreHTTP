@@ -38,27 +38,33 @@ public class RedisRateLimitMiddleware implements Middleware {
     }
 
     public RedisRateLimitMiddleware(int maxRequests, int windowSeconds, Set<String> trustedProxies) {
+        this(maxRequests, windowSeconds, trustedProxies, createDefaultPool());
+    }
+
+    public RedisRateLimitMiddleware(int maxRequests, int windowSeconds, Set<String> trustedProxies, JedisPool pool) {
         this.maxRequests = maxRequests;
         this.windowSeconds = windowSeconds;
         this.trustedProxies = trustedProxies != null ? trustedProxies : Set.of();
         this.fallback = new RateLimitMiddleware(maxRequests, windowSeconds * 1000L, this.trustedProxies);
+        this.jedisPool = pool;
+    }
 
+    private static JedisPool createDefaultPool() {
         String redisUrl = Env.get("NIOFLOW_REDIS_URL");
         if (redisUrl != null && !redisUrl.isBlank()) {
             try {
-                this.jedisPool = new JedisPool(new JedisPoolConfig(), redisUrl);
-                try (Jedis jedis = jedisPool.getResource()) {
+                JedisPool pool = new JedisPool(new JedisPoolConfig(), redisUrl);
+                try (Jedis jedis = pool.getResource()) {
                     jedis.ping();
                 }
                 logger.info("RedisRateLimitMiddleware connected to Redis at {}", redisUrl);
+                return pool;
             } catch (Exception e) {
                 logger.error("Failed to connect to Redis at {}: {}. Will fail-open to in-memory.", redisUrl,
                         e.getMessage());
-                this.jedisPool = null;
             }
-        } else {
-            this.jedisPool = null;
         }
+        return null;
     }
 
     @Override

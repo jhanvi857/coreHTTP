@@ -136,12 +136,12 @@ MongoDatabase db = mongo.getDatabase("production");`}
           language="java"
           title="Accessing configuration"
           code={`// Get String with fallback
-      String origin = Env.get("NIOFLOW_CORS_ORIGIN", "http://localhost:3000");
+String origin = Env.get("NIOFLOW_CORS_ORIGIN", "http://localhost:3000");
 
-      // Feature guards
-      boolean chaosEnabled = Env.getAsBoolean("NIOFLOW_CHAOS_ENABLED", false);
-      boolean replayEnabled = Env.getAsBoolean("NIOFLOW_REPLAY_ENABLED", false);
-      boolean watchEnabled = Env.getAsBoolean("NIOFLOW_WATCH", false);
+// Feature guards
+boolean chaosEnabled = Env.getAsBoolean("NIOFLOW_CHAOS_ENABLED", false);
+boolean replayEnabled = Env.getAsBoolean("NIOFLOW_REPLAY_ENABLED", false);
+boolean watchEnabled = Env.getAsBoolean("NIOFLOW_WATCH", false);
 
 // Get typed primitives
 int port = Env.getAsInt("PORT", 8080);
