@@ -14,19 +14,18 @@ COPY task-planner-app/src task-planner-app/src
 RUN mvn package -DskipTests -pl task-planner-app -am
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/task-planner-app/target/task-planner-app-*-jar-with-dependencies.jar app.jar
 # Copy static assets from the build stage
 COPY --from=build /app/task-planner-app/target/classes/public ./public
 
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends curl \
-	&& rm -rf /var/lib/apt/lists/*
+# Use apk (Alpine package manager) instead of apt-get to avoid CI mirror issues
+RUN apk add --no-cache curl
 
-# Create an unprivileged runtime user for defense-in-depth.
-RUN useradd --system --uid 10001 --create-home appuser \
-	&& chown -R appuser:appuser /app
+# Create an unprivileged runtime user for defense-in-depth on Alpine
+RUN addgroup -g 10001 -S appgroup && adduser -u 10001 -S appuser -G appgroup \
+	&& chown -R appuser:appgroup /app
 
 # Production tuning defaults — sensitive vars (DB_PASS, JWT_SECRET) must be
 # supplied at runtime via environment; they have no defaults here.
