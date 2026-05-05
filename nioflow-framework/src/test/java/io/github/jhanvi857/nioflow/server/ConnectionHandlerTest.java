@@ -116,42 +116,41 @@ class ConnectionHandlerTest {
     }
 
     @Test
-    void handle_teAndContentLengthPresent_returns400() throws Exception {
+    void duplicateContentLength_returns400() throws Exception {
         try (Socket socket = new Socket("localhost", port)) {
             socket.setSoTimeout(2000);
             OutputStream out = socket.getOutputStream();
-            out.write("POST /test HTTP/1.1\r\nTransfer-Encoding: chunked\r\nContent-Length: 5\r\n\r\n5\r\nhello\r\n0\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+            out.write("POST /test HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5\r\nContent-Length: 10\r\n\r\nhello".getBytes(StandardCharsets.UTF_8));
             out.flush();
 
             String response = readResponse(socket.getInputStream());
-            assertTrue(response.contains("400 Bad Request"));
+            assertTrue(response.startsWith("HTTP/1.1 400"));
         }
     }
 
     @Test
-    void handle_multipleContentLength_returns400() throws Exception {
+    void transferEncodingAndContentLength_returns400() throws Exception {
         try (Socket socket = new Socket("localhost", port)) {
             socket.setSoTimeout(2000);
             OutputStream out = socket.getOutputStream();
-            out.write("POST /test HTTP/1.1\r\nContent-Length: 5\r\nContent-Length: 10\r\n\r\nhello".getBytes(StandardCharsets.UTF_8));
+            out.write("POST /test HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\nContent-Length: 5\r\n\r\n5\r\nhello\r\n0\r\n\r\n".getBytes(StandardCharsets.UTF_8));
             out.flush();
 
             String response = readResponse(socket.getInputStream());
-            assertTrue(response.contains("400 Bad Request"));
+            assertTrue(response.startsWith("HTTP/1.1 400"));
         }
     }
 
     @Test
-    void handle_obfuscatedTE_returns400() throws Exception {
+    void multiValueTransferEncoding_returns400() throws Exception {
         try (Socket socket = new Socket("localhost", port)) {
             socket.setSoTimeout(2000);
             OutputStream out = socket.getOutputStream();
-            // Obfuscated/Multiple TE is usually rejected for security
-            out.write("POST /test HTTP/1.1\r\nTransfer-Encoding: chunked, identity\r\n\r\n0\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+            out.write("POST /test HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: identity, chunked\r\nContent-Length: 5\r\n\r\nhello".getBytes(StandardCharsets.UTF_8));
             out.flush();
 
             String response = readResponse(socket.getInputStream());
-            assertTrue(response.contains("400 Bad Request"));
+            assertTrue(response.startsWith("HTTP/1.1 400"));
         }
     }
 

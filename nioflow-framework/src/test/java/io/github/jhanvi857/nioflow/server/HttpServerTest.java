@@ -102,6 +102,82 @@ class HttpServerTest {
         }
     }
 
+    @Test
+    void server_keepAlive_processesMultipleRequests() throws Exception {
+        try (Socket socket = new Socket("localhost", port)) {
+            socket.setSoTimeout(2000);
+            OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+
+            // First request
+            out.write("GET /hello HTTP/1.1\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            String res1 = readResponsePartial(in);
+            assertTrue(res1.contains("200 OK"));
+            assertTrue(res1.contains("world"));
+
+            // Second request on same socket
+            out.write("GET /hello HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            String res2 = readResponse(in);
+            assertTrue(res2.contains("200 OK"));
+            assertTrue(res2.contains("world"));
+        }
+    }
+
+    @Test
+    void server_payloadTooLarge_returns413() throws Exception {
+        try (Socket socket = new Socket("localhost", port)) {
+            socket.setSoTimeout(2000);
+            String hugeBodyHeader = "POST /hello HTTP/1.1\r\nHost: localhost\r\nContent-Length: 20000000\r\n\r\n";
+            socket.getOutputStream().write(hugeBodyHeader.getBytes());
+            socket.getOutputStream().flush();
+
+            String response = readResponse(socket.getInputStream());
+            assertTrue(response.contains("413 Payload Too Large"));
+        }
+    }
+
+    @Test
+    void server_headersTooLarge_returns431() throws Exception {
+        try (Socket socket = new Socket("localhost", port)) {
+            socket.setSoTimeout(2000);
+            String hugeHeaders = "GET / HTTP/1.1\r\n" + "X-Header: value\r\n".repeat(600) + "\r\n";
+            socket.getOutputStream().write(hugeHeaders.getBytes());
+            socket.getOutputStream().flush();
+
+            String response = readResponse(socket.getInputStream());
+            assertTrue(response.contains("431 Request Header Fields Too Large"));
+        }
+    }
+
+    @Test
+    void server_badRequest_returns400() throws Exception {
+        try (Socket socket = new Socket("localhost", port)) {
+            socket.setSoTimeout(2000);
+            socket.getOutputStream().write("INVALID REQUEST LINE\r\n\r\n".getBytes());
+            socket.getOutputStream().flush();
+
+            String response = readResponse(socket.getInputStream());
+            assertTrue(response.contains("400 Bad Request"));
+        }
+    }
+
+    private String readResponsePartial(InputStream in) throws Exception {
+        // Reads until \r\n\r\n and then a bit more to get the body
+        // Simple for testing keep-alive
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        byte[] buffer = new byte[1];
+        while (in.read(buffer) != -1) {
+            out.write(buffer);
+            String s = out.toString();
+            if (s.contains("\r\n\r\n") && s.contains("world")) {
+                break;
+            }
+        }
+        return out.toString();
+    }
+
     private String readResponse(InputStream in) throws Exception {
         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
