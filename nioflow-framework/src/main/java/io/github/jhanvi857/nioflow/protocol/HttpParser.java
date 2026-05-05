@@ -57,6 +57,10 @@ public final class HttpParser {
         String path = parts[1];
         String version = parts[2];
 
+        if (method.isEmpty()) {
+            throw new HttpParseException("HTTP method cannot be empty");
+        }
+
         if (path.indexOf('\0') >= 0) {
             throw new HttpParseException("Null byte detected in request path");
         }
