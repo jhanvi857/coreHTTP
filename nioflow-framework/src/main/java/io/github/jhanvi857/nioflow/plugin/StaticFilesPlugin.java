@@ -20,6 +20,6 @@ public class StaticFilesPlugin implements NioFlowPlugin {
     @Override
     public void onRegister(NioFlowApp app) {
         String pattern = mountPath.endsWith("/") ? mountPath + "*" : mountPath + "/*";
-        app.get(pattern, new StaticFileHandler(directory));
+        app.get(pattern, new StaticFileHandler(directory, mountPath));
     }
 }

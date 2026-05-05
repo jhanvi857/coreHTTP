@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HttpResponse {
-    private final HttpStatus status;
-    private final Map<String, String> headers;
+    private HttpStatus status;
+    private Map<String, String> headers;
     private byte[] bodyBytes;
     private InputStream bodyStream;
     private long bodyLength = -1;
@@ -41,12 +41,61 @@ public class HttpResponse {
         this.headers.put("Content-Type", "text/plain");
     }
 
-    public void addHeader(String key, String value) {
+    public HttpResponse addHeader(String key, String value) {
         this.headers.put(key, value);
+        return this;
     }
 
-    public void setContentType(String contentType) {
+    public HttpResponse header(String key, String value) {
+        if (value != null) {
+            this.headers.put(key, value);
+        }
+        return this;
+    }
+
+    public HttpResponse status(int code) {
+        this.status = HttpStatus.fromCode(code);
+        return this;
+    }
+
+    public HttpResponse status(HttpStatus status) {
+        this.status = status;
+        return this;
+    }
+
+    public HttpResponse json(Object data) {
+        if (data == null) return this;
+        String json = io.github.jhanvi857.nioflow.util.JsonUtils.toJson(data);
+        this.bodyBytes = json.getBytes(StandardCharsets.UTF_8);
+        this.bodyLength = this.bodyBytes.length;
+        this.headers.put("Content-Type", "application/json");
+        this.headers.put("Content-Length", String.valueOf(this.bodyLength));
+        return this;
+    }
+
+    public HttpResponse send(String body) {
+        this.bodyBytes = body != null ? body.getBytes(StandardCharsets.UTF_8) : new byte[0];
+        this.bodyLength = this.bodyBytes.length;
+        this.headers.put("Content-Type", "text/plain");
+        this.headers.put("Content-Length", String.valueOf(this.bodyLength));
+        return this;
+    }
+
+    public HttpResponse redirect(String url) {
+        this.status = HttpStatus.fromCode(302);
+        this.headers.put("Location", url);
+        return this;
+    }
+
+    public HttpResponse redirect(String url, int code) {
+        this.status = HttpStatus.fromCode(code);
+        this.headers.put("Location", url);
+        return this;
+    }
+
+    public HttpResponse setContentType(String contentType) {
         this.headers.put("Content-Type", contentType);
+        return this;
     }
 
     public HttpStatus getStatus() {

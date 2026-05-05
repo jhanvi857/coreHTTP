@@ -87,9 +87,7 @@ public class ConnectionHandler implements Runnable {
                     break;
                 }
 
-                if (in.available() == 0) {
-                    break;
-                }
+                // Removed in.available() check to allow parser.parse(in) to wait for next request in keep-alive mode
             }
         } catch (Exception e) {
             if (channel.isOpen()) {

@@ -121,10 +121,12 @@ public class Database {
     public static void shutdown() {
         if (pgDataSource != null) {
             pgDataSource.close();
+            pgDataSource = null;
             logger.info("PostgreSQL connection pool closed.");
         }
         if (mongoClient != null) {
             mongoClient.close();
+            mongoClient = null;
             logger.info("MongoDB client closed.");
         }
     }
