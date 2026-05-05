@@ -6,6 +6,13 @@ export default function GettingStartedPage() {
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-gray-900 dark:text-white">Getting Started</h1>
       <P>Everything a new user needs to download, install, and run NioFlow quickly.</P>
 
+      <H2 id="prerequisites">Prerequisites</H2>
+      <P>Before starting, ensure you have the following installed on your machine:</P>
+      <ul className="list-disc pl-6 space-y-2 my-4 text-gray-700 dark:text-gray-300">
+        <li><strong>Java 17+:</strong> <a href="https://adoptium.net/" target="_blank" className="text-blue-500 hover:underline">Download Eclipse Temurin</a></li>
+        <li><strong>Node.js (for CLI):</strong> <a href="https://nodejs.org/" target="_blank" className="text-blue-500 hover:underline">Download Node.js</a></li>
+      </ul>
+
       <H2 id="download-options">Installation</H2>
       <H3>NioFlow CLI (Recommended)</H3>
       <P>The fastest way to get started. The CLI handles scaffolding, environment setup, and Maven management for you.</P>
@@ -31,7 +38,7 @@ nioflow dev`}
         code={`<dependency>
   <groupId>io.github.jhanvi857</groupId>
   <artifactId>nioflow-framework</artifactId>
-  <version>1.2.0</version>
+  <version>1.4.0</version>
 </dependency>`}
       />
 
@@ -42,32 +49,12 @@ nioflow dev`}
         title="App.java"
         language="java"
         code={`import io.github.jhanvi857.nioflow.NioFlowApp;
-import io.github.jhanvi857.nioflow.middleware.ChaosMiddleware;
-import io.github.jhanvi857.nioflow.middleware.CircuitBreakerMiddleware;
-import io.github.jhanvi857.nioflow.protocol.HttpStatus;
 
 public class App {
     public static void main(String[] args) {
-        // Enable hot reload for developer productivity
-        NioFlowApp.enableHotReload(App.class, args);
-
         NioFlowApp app = new NioFlowApp();
 
-        app.use(new ChaosMiddleware().latency(120, 0.05));
-
         app.get("/", ctx -> ctx.send("NioFlow is running"));
-        app.get("/api/search", searchController::search)
-           .timeout(1500)
-           .rateLimit(40, 10_000)
-           .hedge(100);
-
-        app.group("/api/downstream", group -> {
-            group.use(new CircuitBreakerMiddleware().threshold(0.5).windowSize(20).cooldown(10_000));
-            group.get("/inventory", inventoryController::read);
-        });
-
-        app.enableReplay(50);
-        app.get("/_health", ctx -> ctx.status(HttpStatus.OK).json(java.util.Map.of("status", "UP")));
 
         app.listen(8080);
     }

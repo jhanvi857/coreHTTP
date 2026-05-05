@@ -31,9 +31,9 @@ export default function Footer() {
           <div>
             <h3 className="mb-4 font-semibold text-black dark:text-white">Runtime</h3>
             <ul className="space-y-3">
-              <li><span className="text-gray-500 dark:text-gray-400">Middleware Chain</span></li>
-              <li><span className="text-gray-500 dark:text-gray-400">JWT + BCrypt Auth</span></li>
-              <li><span className="text-gray-500 dark:text-gray-400">SQL Persistence</span></li>
+              <li><Link href="/docs/reference#middleware" className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors">Middleware Chain</Link></li>
+              <li><Link href="/docs/auth-security" className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors">JWT + BCrypt Auth</Link></li>
+              <li><Link href="/docs/database-env#database-connection" className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors">SQL Persistence</Link></li>
             </ul>
           </div>
 
@@ -47,7 +47,7 @@ export default function Footer() {
 
         <div className="pt-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center border-t border-muted">
           <p className="text-gray-500 dark:text-gray-400">
-            &copy; {new Date().getFullYear()} NioFlow by **Jhanvi Patel**. Open source under MIT.
+            &copy; {new Date().getFullYear()} NioFlow by <strong>Jhanvi Patel</strong>. Open source under MIT.
           </p>
           <div className="flex items-center gap-2 group">
             <span className="flex h-2 w-2 rounded-full bg-green-500" />

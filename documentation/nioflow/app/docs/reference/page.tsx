@@ -25,6 +25,8 @@ app.group(String prefix, GroupConfig config);
 app.exception(Class<? extends Throwable> type, ExceptionHandler handler);
 app.onError(GlobalErrorHandler handler);
     app.enableReplay(int capacity);
+    app.enableMetrics();
+    app.enableMetrics(String token); // Optional token-gated access
     app.enableHotReload(Class<?> mainClass, String[] args);
 
 app.listen(int port);`}
@@ -35,6 +37,8 @@ app.listen(int port);`}
         title="context-methods"
         language="java"
         code={`String value = ctx.pathParam("id");
+long idLong = ctx.pathParamAsLong("id"); // Throws 400 if invalid
+int idInt = ctx.pathParamAsInt("id"); // Throws 400 if invalid
 String query = ctx.queryParam("q");
 String auth = ctx.header("Authorization");
 
@@ -53,6 +57,8 @@ ctx.send("plain text");`}
         code={`app.use(new LoggerMiddleware());
 app.use(new ChaosMiddleware().latency(150, 0.05));
 app.use(new RateLimitMiddleware(100, 10_000));
+// v1.4.0: Rate limiter with trusted proxies for correct IP extraction
+app.use(new RateLimitMiddleware(100, 10_000, java.util.List.of("10.0.0.1")));
 
 // order matters: logger -> chaos -> global limiter -> route/group policies`}
       />
@@ -97,7 +103,8 @@ Sensitive headers stripped automatically:
 boolean ok = PasswordHasher.verify("secret-password", hash);
 
 String token = JwtProvider.generateToken("user@example.com", "USER");
-var claims = JwtProvider.validateToken(token);`}
+var claims = JwtProvider.validateToken(token);
+String jti = JwtProvider.getJtiFromToken(token); // Used for revocation`}
       />
 
       <H2 id="status-codes">HTTP Status Utilities</H2>
