@@ -143,11 +143,7 @@
             <artifactId>opentelemetry-exporter-otlp</artifactId>
             <version>1.44.1</version>
         </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-            <version>1.28.0-alpha</version>
-        </dependency>
+
 
         <!-- Testing -->
         <dependency>
